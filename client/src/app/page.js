@@ -1,146 +1,221 @@
 "use client";
 
 import { useState } from "react";
-import {
-  checkApiHealth,
-  startTrial,
-  completeTrial,
-} from "@/lib/api";
-import { detectDevice } from "@/lib/device";
+import { useRouter } from "next/navigation";
+import styles from "./page.module.css";
 
-export default function TestLibPage() {
-  const [trialId, setTrialId] = useState("");
-  const [output, setOutput] = useState(null);
+const TASK_ROUTES = {
+  task1: "/checkout",
+  task2: "/change-password",
+  task3: "/support-ticket",
+};
+
+export default function HomePage() {
+  const router = useRouter();
+
+  const [participantId, setParticipantId] = useState("");
+  const [selectedDevice, setSelectedDevice] = useState("");
+  const [selectedTask, setSelectedTask] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  async function runTest(callback) {
-    setLoading(true);
-    setError("");
+  function handleSubmit(event) {
+    event.preventDefault();
 
-    try {
-      const result = await callback();
-      setOutput(result);
-    } catch (caughtError) {
-      console.error(caughtError);
-      setError(caughtError.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+    const cleanedParticipantId = participantId
+        .trim()
+        .toUpperCase();
 
-  function testDeviceDetection() {
-    const result = {
-      device: detectDevice(),
-      width: window.innerWidth,
-    };
-
-    setOutput(result);
-    setError("");
-  }
-
-  function testHealth() {
-    runTest(() => checkApiHealth());
-  }
-
-  function testStartTrial() {
-    runTest(async () => {
-      const result = await startTrial({
-        participantId: "LIB-TEST-001",
-        condition: "HPC-HOC",
-        taskName: "checkout",
-        trialOrder: 1,
-        startDevice: detectDevice(),
-      });
-
-      setTrialId(result.trial.id);
-
-      return result;
-    });
-  }
-
-  function testCompleteTrial() {
-    if (!trialId) {
-      setError("Start a trial first.");
+    if (!cleanedParticipantId) {
+      setError("Please enter your participant ID.");
       return;
     }
 
-    runTest(() =>
-        completeTrial({
-          trialId,
-          accuracy: 1,
-          completionDevice: detectDevice(),
-        }),
+    if (cleanedParticipantId.length > 50) {
+      setError(
+          "Participant ID must not exceed 50 characters.",
+      );
+      return;
+    }
+
+    if (!selectedDevice) {
+      setError("Please select a device.");
+      return;
+    }
+
+    if (!selectedTask) {
+      setError("Please select a task.");
+      return;
+    }
+
+    const taskRoute = TASK_ROUTES[selectedTask];
+
+    if (!taskRoute) {
+      setError("The selected task is not valid.");
+      return;
+    }
+
+    sessionStorage.setItem(
+        "participantId",
+        cleanedParticipantId,
     );
+
+    sessionStorage.setItem(
+        "selectedDevice",
+        selectedDevice,
+    );
+
+    sessionStorage.setItem(
+        "selectedTask",
+        selectedTask,
+    );
+
+    /*
+     * Mobile tasks begin with the first condition:
+     * HPC-HOC.
+     */
+    if (selectedDevice === "mobile") {
+      sessionStorage.setItem("conditionIndex", "0");
+    } else {
+      sessionStorage.removeItem("conditionIndex");
+    }
+
+    /*
+     * Clear any unfinished trial IDs left from testing
+     * or a previous task session.
+     */
+    sessionStorage.removeItem("activeTrialId");
+
+    router.push(taskRoute);
+  }
+
+  function clearError() {
+    if (error) {
+      setError("");
+    }
   }
 
   return (
-      <main
-          style={{
-            maxWidth: "700px",
-            margin: "60px auto",
-            padding: "24px",
-            fontFamily: "Arial, sans-serif",
-          }}
-      >
-        <h1>Library Test</h1>
+      <main className={styles.page}>
+        <section className={styles.card}>
+          <header className={styles.header}>
+            <p className={styles.studyLabel}>
+              Research Study
+            </p>
 
-        <p>
-          Current trial ID: <strong>{trialId || "None"}</strong>
-        </p>
+            <h1>
+              Welcome to the Interaction Consistency Study
+            </h1>
 
-        <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "12px",
-              marginBottom: "24px",
-            }}
-        >
-          <button onClick={testDeviceDetection} disabled={loading}>
-            Test device
-          </button>
+            <p className={styles.description}>
+              Enter the information provided by the researcher to
+              begin the selected study task.
+            </p>
+          </header>
 
-          <button onClick={testHealth} disabled={loading}>
-            Test API health
-          </button>
+          <form
+              className={styles.form}
+              onSubmit={handleSubmit}
+          >
+            <div className={styles.field}>
+              <label htmlFor="participantId">
+                Participant ID
+              </label>
 
-          <button onClick={testStartTrial} disabled={loading}>
-            Start test trial
-          </button>
+              <input
+                  id="participantId"
+                  name="participantId"
+                  type="text"
+                  value={participantId}
+                  onChange={(event) => {
+                    setParticipantId(event.target.value);
+                    clearError();
+                  }}
+                  placeholder="001"
+                  autoComplete="off"
+                  autoFocus
+              />
+            </div>
 
-          <button onClick={testCompleteTrial} disabled={loading}>
-            Complete test trial
-          </button>
-        </div>
+            <div className={styles.field}>
+              <label htmlFor="device">
+                Select device
+              </label>
 
-        {loading && <p>Testing...</p>}
+              <select
+                  id="device"
+                  name="device"
+                  value={selectedDevice}
+                  onChange={(event) => {
+                    setSelectedDevice(event.target.value);
+                    clearError();
+                  }}
+              >
+                <option value="">
+                  Choose a device
+                </option>
 
-        {error && (
-            <pre
-                style={{
-                  padding: "16px",
-                  background: "#ffeaea",
-                  color: "#a40000",
-                  whiteSpace: "pre-wrap",
-                }}
+                <option value="desktop">
+                  Desktop
+                </option>
+
+                <option value="mobile">
+                  Mobile
+                </option>
+              </select>
+            </div>
+
+            <div className={styles.field}>
+              <label htmlFor="task">
+                Select task
+              </label>
+
+              <select
+                  id="task"
+                  name="task"
+                  value={selectedTask}
+                  onChange={(event) => {
+                    setSelectedTask(event.target.value);
+                    clearError();
+                  }}
+              >
+                <option value="">
+                  Choose a task
+                </option>
+
+                <option value="task1">
+                  Task 1
+                </option>
+
+                <option value="task2">
+                  Task 2
+                </option>
+
+                <option value="task3">
+                  Task 3
+                </option>
+              </select>
+            </div>
+
+            {error && (
+                <p className={styles.errorMessage}>
+                  {error}
+                </p>
+            )}
+
+            <button
+                type="submit"
+                className={styles.submitButton}
             >
-          {error}
-        </pre>
-        )}
+              Begin Task
+            </button>
+          </form>
 
-        {output && (
-            <pre
-                style={{
-                  padding: "16px",
-                  background: "#f1f3f5",
-                  overflowX: "auto",
-                  whiteSpace: "pre-wrap",
-                }}
-            >
-          {JSON.stringify(output, null, 2)}
-        </pre>
-        )}
+          <p className={styles.privacyNote}>
+            Enter only the participant ID provided by the
+            researcher. Do not enter your name, email address, or
+            other personal information.
+          </p>
+        </section>
       </main>
   );
 }
