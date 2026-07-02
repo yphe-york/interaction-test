@@ -1,60 +1,146 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import styles from "./page.module.css";
+import {
+  checkApiHealth,
+  startTrial,
+  completeTrial,
+} from "@/lib/api";
+import { detectDevice } from "@/lib/device";
 
-export default function HomePage() {
-  const router = useRouter();
-
-  const [participantId, setParticipantId] = useState("");
+export default function TestLibPage() {
+  const [trialId, setTrialId] = useState("");
+  const [output, setOutput] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(event) {
-    event.preventDefault();
+  async function runTest(callback) {
+    setLoading(true);
+    setError("");
 
-    const cleanedId = participantId.trim();
+    try {
+      const result = await callback();
+      setOutput(result);
+    } catch (caughtError) {
+      console.error(caughtError);
+      setError(caughtError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    if (!cleanedId) {
-      setError("Please enter your participant ID.");
+  function testDeviceDetection() {
+    const result = {
+      device: detectDevice(),
+      width: window.innerWidth,
+    };
+
+    setOutput(result);
+    setError("");
+  }
+
+  function testHealth() {
+    runTest(() => checkApiHealth());
+  }
+
+  function testStartTrial() {
+    runTest(async () => {
+      const result = await startTrial({
+        participantId: "LIB-TEST-001",
+        condition: "HPC-HOC",
+        taskName: "checkout",
+        trialOrder: 1,
+        startDevice: detectDevice(),
+      });
+
+      setTrialId(result.trial.id);
+
+      return result;
+    });
+  }
+
+  function testCompleteTrial() {
+    if (!trialId) {
+      setError("Start a trial first.");
       return;
     }
 
-    sessionStorage.setItem("participantId", cleanedId);
-    router.push("/tasks");
+    runTest(() =>
+        completeTrial({
+          trialId,
+          accuracy: 1,
+          completionDevice: detectDevice(),
+        }),
+    );
   }
 
   return (
-      <main className={styles.homePage}>
-        <section className={styles.welcomeCard}>
-          <p className={styles.studyLabel}>Research Study</p>
+      <main
+          style={{
+            maxWidth: "700px",
+            margin: "60px auto",
+            padding: "24px",
+            fontFamily: "Arial, sans-serif",
+          }}
+      >
+        <h1>Library Test</h1>
 
-          <h1>Welcome to the Interaction Consistency Study</h1>
+        <p>
+          Current trial ID: <strong>{trialId || "None"}</strong>
+        </p>
 
-          <p className={styles.studyDescription}>
-            Please enter your participant ID to begin the study.
-          </p>
+        <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "12px",
+              marginBottom: "24px",
+            }}
+        >
+          <button onClick={testDeviceDetection} disabled={loading}>
+            Test device
+          </button>
 
-          <form onSubmit={handleSubmit} className={styles.participantForm}>
-            <label htmlFor="participantId">Participant ID</label>
+          <button onClick={testHealth} disabled={loading}>
+            Test API health
+          </button>
 
-            <input
-                id="participantId"
-                type="text"
-                value={participantId}
-                onChange={(event) => {
-                  setParticipantId(event.target.value);
-                  setError("");
+          <button onClick={testStartTrial} disabled={loading}>
+            Start test trial
+          </button>
+
+          <button onClick={testCompleteTrial} disabled={loading}>
+            Complete test trial
+          </button>
+        </div>
+
+        {loading && <p>Testing...</p>}
+
+        {error && (
+            <pre
+                style={{
+                  padding: "16px",
+                  background: "#ffeaea",
+                  color: "#a40000",
+                  whiteSpace: "pre-wrap",
                 }}
-                placeholder="For example: P01"
-                autoComplete="off"
-            />
+            >
+          {error}
+        </pre>
+        )}
 
-            {error && <p className={styles.errorMessage}>{error}</p>}
-
-            <button type="submit">Begin Study</button>
-          </form>
-        </section>
+        {output && (
+            <pre
+                style={{
+                  padding: "16px",
+                  background: "#f1f3f5",
+                  overflowX: "auto",
+                  whiteSpace: "pre-wrap",
+                }}
+            >
+          {JSON.stringify(output, null, 2)}
+        </pre>
+        )}
       </main>
   );
 }
