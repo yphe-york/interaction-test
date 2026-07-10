@@ -10,6 +10,83 @@ const TASK_ROUTES = {
   task3: "/support-ticket",
 };
 
+function DesktopIcon() {
+  return (
+      <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className={styles.optionIconSvg}
+      >
+        <rect
+            x="2.5"
+            y="3.5"
+            width="19"
+            height="13"
+            rx="2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+        />
+
+        <path
+            d="M8 20h8M12 16.5V20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+        />
+      </svg>
+  );
+}
+
+function MobileIcon() {
+  return (
+      <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className={styles.optionIconSvg}
+      >
+        <rect
+            x="7"
+            y="2.5"
+            width="10"
+            height="19"
+            rx="2.3"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+        />
+
+        <path
+            d="M10 5h4M11 18.5h2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+        />
+      </svg>
+  );
+}
+
+function ArrowIcon() {
+  return (
+      <svg
+          viewBox="0 0 20 20"
+          aria-hidden="true"
+          className={styles.buttonIcon}
+      >
+        <path
+            d="M4 10h11M11 6l4 4-4 4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+      </svg>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
 
@@ -17,6 +94,12 @@ export default function HomePage() {
   const [selectedDevice, setSelectedDevice] = useState("");
   const [selectedTask, setSelectedTask] = useState("");
   const [error, setError] = useState("");
+
+  function clearError() {
+    if (error) {
+      setError("");
+    }
+  }
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -69,29 +152,15 @@ export default function HomePage() {
         selectedTask,
     );
 
-    /*
-     * Mobile tasks begin with the first condition:
-     * HPC-HOC.
-     */
     if (selectedDevice === "mobile") {
       sessionStorage.setItem("conditionIndex", "0");
     } else {
       sessionStorage.removeItem("conditionIndex");
     }
 
-    /*
-     * Clear any unfinished trial IDs left from testing
-     * or a previous task session.
-     */
     sessionStorage.removeItem("activeTrialId");
 
     router.push(taskRoute);
-  }
-
-  function clearError() {
-    if (error) {
-      setError("");
-    }
   }
 
   return (
@@ -102,13 +171,11 @@ export default function HomePage() {
               Research Study
             </p>
 
-            <h1>
-              Welcome to the Interaction Consistency Study
-            </h1>
+            <h1>Interaction Consistency Study</h1>
 
             <p className={styles.description}>
-              Enter the information provided by the researcher to
-              begin the selected study task.
+              Enter the information provided by the researcher
+              to begin your assigned task.
             </p>
           </header>
 
@@ -130,74 +197,132 @@ export default function HomePage() {
                     setParticipantId(event.target.value);
                     clearError();
                   }}
-                  placeholder="001"
+                  placeholder="For example, P001"
                   autoComplete="off"
                   autoFocus
               />
             </div>
 
-            <div className={styles.field}>
-              <label htmlFor="device">
-                Select device
-              </label>
+            <fieldset className={styles.optionGroup}>
+              <legend>Select device</legend>
 
-              <select
-                  id="device"
-                  name="device"
-                  value={selectedDevice}
-                  onChange={(event) => {
-                    setSelectedDevice(event.target.value);
-                    clearError();
-                  }}
-              >
-                <option value="">
-                  Choose a device
-                </option>
+              <div className={styles.deviceGrid}>
+                <label
+                    className={`${styles.choiceCard} ${
+                        selectedDevice === "desktop"
+                            ? styles.selectedCard
+                            : ""
+                    }`}
+                >
+                  <input
+                      type="radio"
+                      name="device"
+                      value="desktop"
+                      checked={selectedDevice === "desktop"}
+                      onChange={(event) => {
+                        setSelectedDevice(event.target.value);
+                        clearError();
+                      }}
+                  />
 
-                <option value="desktop">
-                  Desktop
-                </option>
+                  <span className={styles.optionIcon}>
+                  <DesktopIcon />
+                </span>
 
-                <option value="mobile">
-                  Mobile
-                </option>
-              </select>
-            </div>
+                  <span className={styles.choiceContent}>
+                  <strong>Desktop</strong>
+                  <small>Computer browser</small>
+                </span>
 
-            <div className={styles.field}>
-              <label htmlFor="task">
-                Select task
-              </label>
+                  <span
+                      className={styles.radioIndicator}
+                      aria-hidden="true"
+                  />
+                </label>
 
-              <select
-                  id="task"
-                  name="task"
-                  value={selectedTask}
-                  onChange={(event) => {
-                    setSelectedTask(event.target.value);
-                    clearError();
-                  }}
-              >
-                <option value="">
-                  Choose a task
-                </option>
+                <label
+                    className={`${styles.choiceCard} ${
+                        selectedDevice === "mobile"
+                            ? styles.selectedCard
+                            : ""
+                    }`}
+                >
+                  <input
+                      type="radio"
+                      name="device"
+                      value="mobile"
+                      checked={selectedDevice === "mobile"}
+                      onChange={(event) => {
+                        setSelectedDevice(event.target.value);
+                        clearError();
+                      }}
+                  />
 
-                <option value="task1">
-                  Task 1
-                </option>
+                  <span className={styles.optionIcon}>
+                  <MobileIcon />
+                </span>
 
-                <option value="task2">
-                  Task 2
-                </option>
+                  <span className={styles.choiceContent}>
+                  <strong>Mobile</strong>
+                  <small>Mobile browser</small>
+                </span>
 
-                <option value="task3">
-                  Task 3
-                </option>
-              </select>
-            </div>
+                  <span
+                      className={styles.radioIndicator}
+                      aria-hidden="true"
+                  />
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset className={styles.optionGroup}>
+              <legend>Select task</legend>
+
+              <div className={styles.taskGrid}>
+                {["task1", "task2", "task3"].map(
+                    (taskValue, index) => (
+                        <label
+                            key={taskValue}
+                            className={`${styles.taskCard} ${
+                                selectedTask === taskValue
+                                    ? styles.selectedCard
+                                    : ""
+                            }`}
+                        >
+                          <input
+                              type="radio"
+                              name="task"
+                              value={taskValue}
+                              checked={selectedTask === taskValue}
+                              onChange={(event) => {
+                                setSelectedTask(event.target.value);
+                                clearError();
+                              }}
+                          />
+
+                          <span className={styles.taskNumber}>
+                      {index + 1}
+                    </span>
+
+                          <span className={styles.taskLabel}>
+                      Task {index + 1}
+                    </span>
+
+                          <span
+                              className={styles.radioIndicator}
+                              aria-hidden="true"
+                          />
+                        </label>
+                    ),
+                )}
+              </div>
+            </fieldset>
 
             {error && (
-                <p className={styles.errorMessage}>
+                <p
+                    className={styles.errorMessage}
+                    role="alert"
+                >
                   {error}
                 </p>
             )}
@@ -206,14 +331,15 @@ export default function HomePage() {
                 type="submit"
                 className={styles.submitButton}
             >
-              Begin Task
+              <span>Begin task</span>
+              <ArrowIcon />
             </button>
           </form>
 
           <p className={styles.privacyNote}>
             Enter only the participant ID provided by the
-            researcher. Do not enter your name, email address, or
-            other personal information.
+            researcher. Do not enter your name, email address,
+            or other personal information.
           </p>
         </section>
       </main>

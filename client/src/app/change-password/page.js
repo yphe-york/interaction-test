@@ -4,41 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { completeTrial, startTrial } from "@/lib/api";
-
-const MOBILE_CONDITIONS = [
-    "HPC-HOC",
-    "HPC-LOC",
-    "LPC-HOC",
-    "LPC-LOC",
-];
-
-const PASSWORD_SCENARIOS = [
-    {
-        accountName: "Research Account A",
-        currentPassword: "BlueSky!27",
-        newPassword: "GreenLake!42",
-    },
-    {
-        accountName: "Research Account B",
-        currentPassword: "SilverMoon!31",
-        newPassword: "OrangeTree!58",
-    },
-    {
-        accountName: "Research Account C",
-        currentPassword: "PurpleRain!64",
-        newPassword: "GoldenSun!73",
-    },
-    {
-        accountName: "Research Account D",
-        currentPassword: "WinterRoad!46",
-        newPassword: "SummerField!82",
-    },
-    {
-        accountName: "Research Account E",
-        currentPassword: "QuietRiver!19",
-        newPassword: "BrightForest!65",
-    },
-];
+import {
+    MOBILE_CONDITIONS,
+    getMobileCondition,
+    getTaskScenario,
+} from "@/config/tasks";
 
 const EMPTY_FORM = {
     currentPassword: "",
@@ -69,19 +39,250 @@ function calculateAccuracy(form, scenario) {
         : 0;
 }
 
+function getPasswordRequirements(password) {
+    return [
+        {
+            label: "At least 8 characters",
+            met: password.length >= 8,
+        },
+        {
+            label: "One uppercase letter",
+            met: /[A-Z]/.test(password),
+        },
+        {
+            label: "One lowercase letter",
+            met: /[a-z]/.test(password),
+        },
+        {
+            label: "One number",
+            met: /\d/.test(password),
+        },
+        {
+            label: "One symbol",
+            met: /[^A-Za-z0-9]/.test(password),
+        },
+    ];
+}
+
+function Icon({ name, className }) {
+    if (name === "lock") {
+        return (
+            <svg
+                className={className}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+            >
+                <rect
+                    x="5"
+                    y="10"
+                    width="14"
+                    height="10"
+                    rx="2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                />
+
+                <path
+                    d="M8 10V7a4 4 0 0 1 8 0v3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "key") {
+        return (
+            <svg
+                className={className}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+            >
+                <circle
+                    cx="8"
+                    cy="12"
+                    r="4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                />
+
+                <path
+                    d="M12 12h8M17 12v3M20 12v2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "shield") {
+        return (
+            <svg
+                className={className}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+            >
+                <path
+                    d="M12 3 19 6v5c0 4.4-2.8 8-7 10-4.2-2-7-5.6-7-10V6l7-3Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                />
+
+                <path
+                    d="m9 12 2 2 4-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "eye") {
+        return (
+            <svg
+                className={className}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+            >
+                <path
+                    d="M3 12s3.2-5 9-5 9 5 9 5-3.2 5-9 5-9-5-9-5Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                />
+
+                <circle
+                    cx="12"
+                    cy="12"
+                    r="2.3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "spark") {
+        return (
+            <svg
+                className={className}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+            >
+                <path
+                    d="m12 3 1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "check") {
+        return (
+            <svg
+                className={className}
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+            >
+                <path
+                    d="m4.5 10 3.2 3.2 7.8-7.7"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "x") {
+        return (
+            <svg
+                className={className}
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+            >
+                <path
+                    d="m6 6 8 8M14 6l-8 8"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                />
+            </svg>
+        );
+    }
+
+    return null;
+}
+
+function SectionCue({ kind, isLPC }) {
+    const highMapping = {
+        current: ["key", "cueBlue"],
+        new: ["shield", "cueGreen"],
+    };
+
+    const lowMapping = {
+        current: ["eye", "cuePurple"],
+        new: ["spark", "cueOrange"],
+    };
+
+    const mapping = isLPC
+        ? lowMapping
+        : highMapping;
+
+    const [iconName, colorClass] = mapping[kind];
+
+    return (
+        <span
+            className={`${styles.sectionCue} ${styles[colorClass]}`}
+            aria-hidden="true"
+        >
+      <Icon name={iconName} />
+    </span>
+    );
+}
+
 export default function ChangePasswordPage() {
     const router = useRouter();
 
-    const [studySession, setStudySession] = useState(null);
-    const [trialId, setTrialId] = useState(null);
-    const [form, setForm] = useState({ ...EMPTY_FORM });
+    const [studySession, setStudySession] =
+        useState(null);
 
-    const [visiblePasswords, setVisiblePasswords] = useState({
-        ...HIDDEN_PASSWORDS,
-    });
+    const [trialId, setTrialId] =
+        useState(null);
 
-    const [screen, setScreen] = useState("instructions");
-    const [error, setError] = useState("");
+    const [form, setForm] =
+        useState({ ...EMPTY_FORM });
+
+    const [visiblePasswords, setVisiblePasswords] =
+        useState({ ...HIDDEN_PASSWORDS });
+
+    const [screen, setScreen] =
+        useState("instructions");
+
+    const [error, setError] =
+        useState("");
+
+    const [isMobileMenuOpen, setIsMobileMenuOpen] =
+        useState(false);
 
     useEffect(() => {
         const participantId =
@@ -124,7 +325,7 @@ export default function ChangePasswordPage() {
     if (!studySession) {
         return (
             <main className={styles.page}>
-                <section className={styles.card}>
+                <section className={styles.studyCard}>
                     <p>Loading task...</p>
                 </section>
             </main>
@@ -137,10 +338,11 @@ export default function ChangePasswordPage() {
         conditionIndex,
     } = studySession;
 
-    const isMobile = selectedDevice === "mobile";
+    const isMobile =
+        selectedDevice === "mobile";
 
     const condition = isMobile
-        ? MOBILE_CONDITIONS[conditionIndex]
+        ? getMobileCondition(conditionIndex)
         : "HPC-HOC";
 
     const isLOC =
@@ -149,17 +351,34 @@ export default function ChangePasswordPage() {
     const isLPC =
         isMobile && condition.startsWith("LPC");
 
-    const scenarioIndex = isMobile
-        ? conditionIndex + 1
-        : 0;
-
-    const scenario =
-        PASSWORD_SCENARIOS[scenarioIndex] ||
-        PASSWORD_SCENARIOS[0];
+    const scenario = getTaskScenario(
+        "task2",
+        selectedDevice,
+        conditionIndex,
+    );
 
     const trialOrder = isMobile
         ? conditionIndex + 7
         : 6;
+
+    const pageClassName = `${styles.page} ${
+        isLPC
+            ? styles.lowPerceptual
+            : styles.highPerceptual
+    }`;
+
+    const passwordRequirements =
+        getPasswordRequirements(form.newPassword);
+
+    const showRequirements =
+        form.newPassword.length > 0;
+
+    const showConfirmationStatus =
+        form.confirmPassword.length > 0;
+
+    const passwordsMatch =
+        form.newPassword.length > 0 &&
+        form.confirmPassword === form.newPassword;
 
     function handleChange(event) {
         const { name, value } = event.target;
@@ -177,6 +396,12 @@ export default function ChangePasswordPage() {
             ...currentState,
             [fieldName]: !currentState[fieldName],
         }));
+    }
+
+    function toggleMobileMenu() {
+        setIsMobileMenuOpen(
+            (currentValue) => !currentValue,
+        );
     }
 
     async function handleBeginTask() {
@@ -219,6 +444,7 @@ export default function ChangePasswordPage() {
 
         setError("");
         setScreen("submitting");
+        setIsMobileMenuOpen(false);
 
         const accuracy = calculateAccuracy(
             form,
@@ -254,7 +480,8 @@ export default function ChangePasswordPage() {
             conditionIndex < MOBILE_CONDITIONS.length - 1;
 
         if (hasNextMobileCondition) {
-            const nextConditionIndex = conditionIndex + 1;
+            const nextConditionIndex =
+                conditionIndex + 1;
 
             sessionStorage.setItem(
                 "conditionIndex",
@@ -269,6 +496,7 @@ export default function ChangePasswordPage() {
             setTrialId(null);
             setForm({ ...EMPTY_FORM });
             setVisiblePasswords({ ...HIDDEN_PASSWORDS });
+            setIsMobileMenuOpen(false);
             setError("");
             setScreen("instructions");
 
@@ -284,14 +512,15 @@ export default function ChangePasswordPage() {
         router.push("/");
     }
 
-    function renderPasswordField({
+    function renderPasswordInput({
                                      label,
                                      name,
+                                     autoComplete,
                                  }) {
         const isVisible = visiblePasswords[name];
 
         return (
-            <label>
+            <label className={styles.field}>
                 <span>{label}</span>
 
                 <div className={styles.passwordInputRow}>
@@ -300,13 +529,13 @@ export default function ChangePasswordPage() {
                         name={name}
                         value={form[name]}
                         onChange={handleChange}
-                        autoComplete="off"
+                        autoComplete={autoComplete}
                         required
                     />
 
                     <button
                         type="button"
-                        className={styles.fieldToggleButton}
+                        className={styles.showButton}
                         onClick={() =>
                             togglePasswordVisibility(name)
                         }
@@ -317,7 +546,14 @@ export default function ChangePasswordPage() {
                                 : `Show ${label.toLowerCase()}`
                         }
                     >
-                        {isVisible ? "Hide" : "Show"}
+                        <Icon
+                            name="eye"
+                            className={styles.showIcon}
+                        />
+
+                        <span>
+              {isVisible ? "Hide" : "Show"}
+            </span>
                     </button>
                 </div>
             </label>
@@ -327,11 +563,26 @@ export default function ChangePasswordPage() {
     function renderCurrentPasswordSection() {
         return (
             <section className={styles.formSection}>
-                <h2>Current Password</h2>
+                <div className={styles.sectionHeading}>
+                    <SectionCue
+                        kind="current"
+                        isLPC={isLPC}
+                    />
 
-                {renderPasswordField({
+                    <div>
+                        <h2>Current password</h2>
+
+                        <p>
+                            Confirm your existing password before making
+                            this change.
+                        </p>
+                    </div>
+                </div>
+
+                {renderPasswordInput({
                     label: "Current password",
                     name: "currentPassword",
+                    autoComplete: "current-password",
                 })}
             </section>
         );
@@ -340,17 +591,99 @@ export default function ChangePasswordPage() {
     function renderNewPasswordSection() {
         return (
             <section className={styles.formSection}>
-                <h2>New Password</h2>
+                <div className={styles.sectionHeading}>
+                    <SectionCue
+                        kind="new"
+                        isLPC={isLPC}
+                    />
 
-                {renderPasswordField({
-                    label: "New password",
-                    name: "newPassword",
-                })}
+                    <div>
+                        <h2>New password</h2>
 
-                {renderPasswordField({
-                    label: "Confirm new password",
-                    name: "confirmPassword",
-                })}
+                        <p>
+                            Enter the new password and confirm it below.
+                        </p>
+                    </div>
+                </div>
+
+                <div className={styles.newPasswordFields}>
+                    <div>
+                        {renderPasswordInput({
+                            label: "New password",
+                            name: "newPassword",
+                            autoComplete: "new-password",
+                        })}
+
+                        {showRequirements && (
+                            <div
+                                className={styles.passwordRequirements}
+                                aria-live="polite"
+                            >
+                                <p>Password requirements</p>
+
+                                <ul>
+                                    {passwordRequirements.map(
+                                        (requirement) => (
+                                            <li
+                                                key={requirement.label}
+                                                className={
+                                                    requirement.met
+                                                        ? styles.requirementMet
+                                                        : styles.requirementPending
+                                                }
+                                            >
+                                                <Icon
+                                                    name={
+                                                        requirement.met
+                                                            ? "check"
+                                                            : "x"
+                                                    }
+                                                />
+
+                                                <span>
+                          {requirement.label}
+                        </span>
+                                            </li>
+                                        ),
+                                    )}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+
+                    <div>
+                        {renderPasswordInput({
+                            label: "Confirm new password",
+                            name: "confirmPassword",
+                            autoComplete: "new-password",
+                        })}
+
+                        {showConfirmationStatus && (
+                            <p
+                                className={
+                                    passwordsMatch
+                                        ? styles.matchMessage
+                                        : styles.mismatchMessage
+                                }
+                                aria-live="polite"
+                            >
+                                <Icon
+                                    name={
+                                        passwordsMatch
+                                            ? "check"
+                                            : "x"
+                                    }
+                                />
+
+                                <span>
+                  {passwordsMatch
+                      ? "Passwords match"
+                      : "Passwords do not match"}
+                </span>
+                            </p>
+                        )}
+                    </div>
+                </div>
             </section>
         );
     }
@@ -360,54 +693,36 @@ export default function ChangePasswordPage() {
         screen === "starting"
     ) {
         return (
-            <main
-                className={`${styles.page} ${
-                    isLPC
-                        ? styles.lowPerceptual
-                        : styles.highPerceptual
-                }`}
-            >
-                <section className={styles.card}>
+            <main className={pageClassName}>
+                <section className={styles.studyCard}>
                     <p className={styles.studyLabel}>
                         {isMobile
                             ? `Task 2 · Round ${conditionIndex + 1} of 4`
                             : "Task 2 · Reference"}
                     </p>
 
-                    <h1>Change Password Task</h1>
+                    <h1>Change password task</h1>
 
                     <p className={styles.description}>
-                        Use the study passwords below to update the
-                        account password.
+                        Update the study account password using the
+                        information provided to you. The required
+                        passwords will not be displayed in this
+                        application.
                     </p>
 
-                    <div className={styles.instructions}>
-                        <dl className={styles.taskDetails}>
-                            <div>
-                                <dt>Account</dt>
-                                <dd>{scenario.accountName}</dd>
-                            </div>
+                    <div className={styles.notice}>
+                        <Icon name="lock" />
 
-                            <div>
-                                <dt>Current password</dt>
-                                <dd>{scenario.currentPassword}</dd>
-                            </div>
-
-                            <div>
-                                <dt>New password</dt>
-                                <dd>{scenario.newPassword}</dd>
-                            </div>
-                        </dl>
+                        <p>
+                            Use only the fictional study passwords. The
+                            timer starts when you select Begin Task.
+                        </p>
                     </div>
 
-                    <p className={styles.notice}>
-                        Use only the fictional passwords shown above.
-                        Do not enter a real password. The timer starts
-                        when you select Begin Task.
-                    </p>
-
                     {error && (
-                        <p className={styles.error}>{error}</p>
+                        <p className={styles.error} role="alert">
+                            {error}
+                        </p>
                     )}
 
                     <button
@@ -431,18 +746,16 @@ export default function ChangePasswordPage() {
             conditionIndex < MOBILE_CONDITIONS.length - 1;
 
         return (
-            <main
-                className={`${styles.page} ${
-                    isLPC
-                        ? styles.lowPerceptual
-                        : styles.highPerceptual
-                }`}
-            >
-                <section className={styles.card}>
+            <main className={pageClassName}>
+                <section className={styles.studyCard}>
+                    <div className={styles.successIcon}>
+                        <Icon name="check" />
+                    </div>
+
                     <h1>
                         {hasNextMobileCondition
-                            ? "Round Completed"
-                            : "Task 2 Completed"}
+                            ? "Round completed"
+                            : "Task 2 completed"}
                     </h1>
 
                     <p className={styles.description}>
@@ -464,23 +777,98 @@ export default function ChangePasswordPage() {
     }
 
     return (
-        <main
-            className={`${styles.page} ${
-                isLPC
-                    ? styles.lowPerceptual
-                    : styles.highPerceptual
-            }`}
-        >
-            <div className={styles.passwordLayout}>
-                <section className={styles.passwordCard}>
-                    <header className={styles.passwordHeader}>
+        <main className={pageClassName}>
+            <header className={styles.appHeader}>
+                <div className={styles.brand}>
+          <span className={styles.brandIcon}>
+            <Icon name="lock" />
+          </span>
+
+                    <div>
+                        <strong>Account settings</strong>
+                        <span>Manage your account</span>
+                    </div>
+                </div>
+
+                <div className={styles.headerActions}>
+          <span className={styles.secureStatus}>
+            Secure session
+          </span>
+
+                    <button
+                        type="button"
+                        className={`${styles.menuButton} ${
+                            isMobileMenuOpen
+                                ? styles.menuButtonOpen
+                                : ""
+                        }`}
+                        onClick={toggleMobileMenu}
+                        aria-expanded={isMobileMenuOpen}
+                        aria-label={
+                            isMobileMenuOpen
+                                ? "Close settings menu"
+                                : "Open settings menu"
+                        }
+                    >
+                        <span />
+                        <span />
+                        <span />
+                    </button>
+                </div>
+            </header>
+
+            <nav
+                className={`${styles.mobileMenu} ${
+                    isMobileMenuOpen
+                        ? styles.mobileMenuOpen
+                        : ""
+                }`}
+                aria-label="Mobile account settings"
+                aria-hidden={!isMobileMenuOpen}
+            >
+                <span>Profile</span>
+
+                <span className={styles.mobileMenuActive}>
+          Security
+        </span>
+
+                <span>Notifications</span>
+
+                <span>Privacy</span>
+            </nav>
+
+            <div className={styles.settingsLayout}>
+                <nav
+                    className={styles.settingsNavigation}
+                    aria-label="Account settings"
+                >
+                    <p>Settings</p>
+
+                    <span>Profile</span>
+
+                    <span className={styles.activeNavigationItem}>
+            Security
+          </span>
+
+                    <span>Notifications</span>
+
+                    <span>Privacy</span>
+                </nav>
+
+                <section className={styles.settingsContent}>
+                    <header className={styles.pageHeader}>
                         <p className={styles.studyLabel}>
                             {isMobile
                                 ? `Task 2 · Round ${conditionIndex + 1} of 4`
                                 : "Task 2 · Reference"}
                         </p>
 
-                        <h1>Change Password</h1>
+                        <h1>Password and security</h1>
+
+                        <p>
+                            Update the password associated with this
+                            account.
+                        </p>
                     </header>
 
                     <form
@@ -500,46 +888,24 @@ export default function ChangePasswordPage() {
                         )}
 
                         {error && (
-                            <p className={styles.error}>{error}</p>
+                            <p className={styles.error} role="alert">
+                                {error}
+                            </p>
                         )}
 
-                        <button
-                            type="submit"
-                            className={styles.primaryButton}
-                            disabled={screen === "submitting"}
-                        >
-                            {screen === "submitting"
-                                ? "Updating Password..."
-                                : "Update Password"}
-                        </button>
+                        <div className={styles.formActions}>
+                            <button
+                                type="submit"
+                                className={styles.primaryButton}
+                                disabled={screen === "submitting"}
+                            >
+                                {screen === "submitting"
+                                    ? "Updating password..."
+                                    : "Update password"}
+                            </button>
+                        </div>
                     </form>
                 </section>
-
-                <aside className={styles.summaryCard}>
-                    <h2>Password Details</h2>
-
-                    <dl className={styles.summaryDetails}>
-                        <div>
-                            <dt>Account</dt>
-                            <dd>{scenario.accountName}</dd>
-                        </div>
-
-                        <div>
-                            <dt>Current</dt>
-                            <dd>{scenario.currentPassword}</dd>
-                        </div>
-
-                        <div>
-                            <dt>New</dt>
-                            <dd>{scenario.newPassword}</dd>
-                        </div>
-                    </dl>
-
-                    <p className={styles.summaryNotice}>
-                        These are fictional study passwords. No real
-                        account will be changed.
-                    </p>
-                </aside>
             </div>
         </main>
     );

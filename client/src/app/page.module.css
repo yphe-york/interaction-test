@@ -1,32 +1,43 @@
 .page {
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    background: #f4f7fa;
-    color: #18212b;
-    font-family: Arial, Helvetica, sans-serif;
+    display: grid;
+    place-items: center;
+    padding: 40px 24px;
+    background: #f2f5f7;
+    color: #17212b;
+    font-family:
+            Arial,
+            Helvetica,
+            sans-serif;
+}
+
+.page,
+.page *,
+.page *::before,
+.page *::after {
+    box-sizing: border-box;
 }
 
 .card {
-    width: 100%;
-    max-width: 560px;
-    padding: 48px;
+    width: min(760px, 100%);
+    padding: 48px 52px;
     background: #ffffff;
     border: 1px solid #dce3ea;
     border-radius: 16px;
-    box-shadow: 0 14px 40px rgba(31, 50, 70, 0.08);
+    box-shadow:
+            0 18px 45px rgba(31, 50, 70, 0.09),
+            0 2px 8px rgba(31, 50, 70, 0.04);
 }
 
 .header {
-    margin-bottom: 30px;
+    max-width: 620px;
+    margin-bottom: 34px;
 }
 
 .studyLabel {
-    margin: 0 0 12px;
+    margin: 0 0 10px;
     color: #285f8f;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 800;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -34,62 +45,221 @@
 
 .header h1 {
     margin: 0;
-    color: #18212b;
-    font-size: 2.2rem;
+    color: #17212b;
+    font-size: 2.15rem;
     line-height: 1.2;
 }
 
 .description {
-    margin: 18px 0 0;
-    color: #657383;
-    line-height: 1.65;
+    margin: 14px 0 0;
+    color: #667482;
+    font-size: 0.98rem;
+    line-height: 1.6;
 }
 
 .form {
     display: grid;
-    gap: 20px;
+    gap: 26px;
 }
 
 .field {
     display: grid;
-    gap: 8px;
+    gap: 9px;
 }
 
-.field label {
-    color: #18212b;
+.field label,
+.optionGroup legend {
+    color: #263643;
+    font-size: 0.9rem;
     font-weight: 700;
 }
 
-.field input,
-.field select {
+.field input {
     width: 100%;
-    min-height: 48px;
-    padding: 12px 14px;
-    border: 1px solid #aeb9c5;
-    border-radius: 8px;
+    min-height: 50px;
+    padding: 13px 15px;
+    border: 1px solid #b3bec8;
+    border-radius: 9px;
     background: #ffffff;
-    color: #18212b;
+    color: #17212b;
+    font-family: inherit;
     font-size: 1rem;
     outline: none;
-    box-sizing: border-box;
 }
 
-.field input:focus,
-.field select:focus {
+.field input::placeholder {
+    color: #98a3ad;
+}
+
+.field input:hover {
+    border-color: #8e9da9;
+}
+
+.field input:focus {
     border-color: #285f8f;
     box-shadow: 0 0 0 3px rgba(40, 95, 143, 0.12);
 }
 
+.optionGroup {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.optionGroup legend {
+    margin-bottom: 10px;
+}
+
+.deviceGrid,
+.taskGrid {
+    display: grid;
+    gap: 12px;
+}
+
+.deviceGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.taskGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.choiceCard,
+.taskCard {
+    min-width: 0;
+    position: relative;
+    cursor: pointer;
+    border: 1px solid #d3dde5;
+    border-radius: 11px;
+    background: #ffffff;
+    transition:
+            border-color 0.18s ease,
+            background 0.18s ease,
+            box-shadow 0.18s ease;
+}
+
+.choiceCard {
+    min-height: 84px;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 18px;
+    align-items: center;
+    gap: 13px;
+    padding: 15px 16px;
+}
+
+.taskCard {
+    min-height: 72px;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 18px;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+}
+
+.choiceCard:hover,
+.taskCard:hover {
+    border-color: #91a6b6;
+    background: #fafcfd;
+}
+
+.choiceCard:focus-within,
+.taskCard:focus-within {
+    border-color: #285f8f;
+    box-shadow: 0 0 0 3px rgba(40, 95, 143, 0.1);
+}
+
+.selectedCard {
+    border-color: #285f8f;
+    background: #f1f7fb;
+    box-shadow: inset 0 0 0 1px #285f8f;
+}
+
+.choiceCard input,
+.taskCard input {
+    width: 1px;
+    height: 1px;
+    position: absolute;
+    overflow: hidden;
+    opacity: 0;
+}
+
+.optionIcon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: #eef4f8;
+    color: #285f8f;
+}
+
+.optionIconSvg {
+    width: 23px;
+    height: 23px;
+}
+
+.choiceContent {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+}
+
+.choiceContent strong {
+    color: #253541;
+    font-size: 0.92rem;
+}
+
+.choiceContent small {
+    color: #7a8792;
+    font-size: 0.74rem;
+}
+
+.radioIndicator {
+    width: 17px;
+    height: 17px;
+    display: block;
+    border: 1.5px solid #aab7c1;
+    border-radius: 50%;
+    background: #ffffff;
+}
+
+.selectedCard .radioIndicator {
+    border: 5px solid #285f8f;
+}
+
+.taskNumber {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    background: #eef4f8;
+    color: #285f8f;
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.taskLabel {
+    color: #283844;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
 .submitButton {
     width: 100%;
-    min-height: 48px;
-    margin-top: 4px;
-    padding: 12px 18px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 13px 18px;
     border: none;
-    border-radius: 8px;
+    border-radius: 9px;
     background: #285f8f;
     color: #ffffff;
-    font-size: 1rem;
+    font-family: inherit;
+    font-size: 0.98rem;
     font-weight: 700;
     cursor: pointer;
 }
@@ -99,38 +269,77 @@
 }
 
 .submitButton:focus-visible {
-    outline: 3px solid rgba(40, 95, 143, 0.3);
-    outline-offset: 2px;
+    outline: 3px solid rgba(40, 95, 143, 0.28);
+    outline-offset: 3px;
+}
+
+.buttonIcon {
+    width: 19px;
+    height: 19px;
 }
 
 .errorMessage {
     margin: 0;
     padding: 12px 14px;
-    border: 1px solid #f1c5c5;
+    border: 1px solid #efc2c2;
     border-radius: 8px;
-    background: #fff0f0;
+    background: #fff2f2;
     color: #a52a2a;
-    font-size: 0.9rem;
+    font-size: 0.86rem;
     line-height: 1.5;
 }
 
 .privacyNote {
-    margin: 24px 0 0;
-    color: #748190;
-    font-size: 0.85rem;
-    line-height: 1.5;
+    margin: 25px 0 0;
+    padding-top: 22px;
+    border-top: 1px solid #e6edf2;
+    color: #788590;
+    font-size: 0.78rem;
+    line-height: 1.55;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
     .page {
-        padding: 16px;
+        padding: 18px 12px;
     }
 
     .card {
+        width: min(560px, 100%);
         padding: 32px 24px;
     }
 
     .header h1 {
         font-size: 1.8rem;
+    }
+
+    .taskGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .taskCard {
+        min-height: 64px;
+    }
+}
+
+@media (max-width: 460px) {
+    .page {
+        padding: 0;
+        background: #ffffff;
+    }
+
+    .card {
+        min-height: 100vh;
+        padding: 30px 20px;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .deviceGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .choiceCard {
+        min-height: 74px;
     }
 }

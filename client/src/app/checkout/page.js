@@ -4,66 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { completeTrial, startTrial } from "@/lib/api";
-
-const MOBILE_CONDITIONS = [
-    "HPC-HOC",
-    "HPC-LOC",
-    "LPC-HOC",
-    "LPC-LOC",
-];
-
-const CHECKOUT_SCENARIOS = [
-    {
-        product: "Wireless Headphones",
-        price: 79.99,
-        fullName: "Taylor Chen",
-        streetAddress: "100 College St",
-        city: "Toronto",
-        postalCode: "M1M 1X1",
-        shippingMethod: "standard",
-        paymentMethod: "study-card",
-    },
-    {
-        product: "Mechanical Keyboard",
-        price: 89.99,
-        fullName: "Jordan Lee",
-        streetAddress: "240 King St W",
-        city: "Toronto",
-        postalCode: "M5V 1H8",
-        shippingMethod: "express",
-        paymentMethod: "paypal",
-    },
-    {
-        product: "Desk Lamp",
-        price: 49.99,
-        fullName: "Alex Morgan",
-        streetAddress: "85 Queen St E",
-        city: "Toronto",
-        postalCode: "M5C 1S1",
-        shippingMethod: "standard",
-        paymentMethod: "paypal",
-    },
-    {
-        product: "Travel Backpack",
-        price: 64.99,
-        fullName: "Casey Wong",
-        streetAddress: "310 Front St W",
-        city: "Toronto",
-        postalCode: "M5V 3B5",
-        shippingMethod: "express",
-        paymentMethod: "study-card",
-    },
-    {
-        product: "Web Camera",
-        price: 74.99,
-        fullName: "Jamie Patel",
-        streetAddress: "55 Bloor St W",
-        city: "Toronto",
-        postalCode: "M4W 1A5",
-        shippingMethod: "standard",
-        paymentMethod: "study-card",
-    },
-];
+import {
+    MOBILE_CONDITIONS,
+    getMobileCondition,
+    getTaskScenario,
+} from "@/config/tasks";
 
 const EMPTY_FORM = {
     fullName: "",
@@ -98,6 +43,46 @@ function normalizeAddress(value) {
 
 function getFullAddress(scenario) {
     return `${scenario.streetAddress}, ${scenario.city}, ${scenario.postalCode}`;
+}
+
+function formatCurrency(value) {
+    return `$${value.toFixed(2)}`;
+}
+
+function getShippingCost(shippingMethod) {
+    if (shippingMethod === "express") {
+        return 14.99;
+    }
+
+    if (shippingMethod === "standard") {
+        return 0;
+    }
+
+    return null;
+}
+
+function getShippingLabel(shippingMethod) {
+    if (shippingMethod === "express") {
+        return "Express shipping";
+    }
+
+    if (shippingMethod === "standard") {
+        return "Standard shipping";
+    }
+
+    return "Not selected";
+}
+
+function getPaymentLabel(paymentMethod) {
+    if (paymentMethod === "study-card") {
+        return "Study Card";
+    }
+
+    if (paymentMethod === "paypal") {
+        return "PayPal";
+    }
+
+    return "Not selected";
 }
 
 function calculateAccuracy(form, scenario, isLOC) {
@@ -135,79 +120,409 @@ function calculateAccuracy(form, scenario, isLOC) {
         : 0;
 }
 
+function CueSvg({ name }) {
+    if (name === "user") {
+        return (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle
+                    cx="12"
+                    cy="8"
+                    r="3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                />
+
+                <path
+                    d="M5.5 20c.6-4.1 3-6.2 6.5-6.2s5.9 2.1 6.5 6.2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "pin") {
+        return (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    d="M12 21s6-5.6 6-11A6 6 0 0 0 6 10c0 5.4 6 11 6 11Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                />
+
+                <circle
+                    cx="12"
+                    cy="10"
+                    r="2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "truck") {
+        return (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    d="M3 6h11v10H3V6Zm11 4h3l3 3v3h-6v-6Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                />
+
+                <circle cx="7" cy="18" r="1.7" />
+                <circle cx="17" cy="18" r="1.7" />
+            </svg>
+        );
+    }
+
+    if (name === "card") {
+        return (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect
+                    x="3"
+                    y="5"
+                    width="18"
+                    height="14"
+                    rx="2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                />
+
+                <path
+                    d="M3 9h18M7 15h4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "tag") {
+        return (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    d="M4 5h7l9 9-6 6-9-9V5Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                />
+
+                <circle cx="8.5" cy="8.5" r="1.3" />
+            </svg>
+        );
+    }
+
+    if (name === "compass") {
+        return (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                />
+
+                <path
+                    d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8 4.8-2.2Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "package") {
+        return (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    d="m4 7 8-4 8 4v10l-8 4-8-4V7Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                />
+
+                <path
+                    d="m4 7 8 4 8-4M12 11v10"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                />
+            </svg>
+        );
+    }
+
+    if (name === "shield") {
+        return (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    d="M12 3 19 6v5c0 4.4-2.8 8-7 10-4.2-2-7-5.6-7-10V6l7-3Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                />
+
+                <path
+                    d="m9 12 2 2 4-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        );
+    }
+
+    return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+                d="m4 7 8-4 8 4v10l-8 4-8-4V7Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+            />
+
+            <path
+                d="m4 7 8 4 8-4M12 11v10"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+            />
+        </svg>
+    );
+}
+
+function SectionCue({ kind, isLPC }) {
+    const highMapping = {
+        customer: ["user", "cueBlue"],
+        address: ["pin", "cuePurple"],
+        delivery: ["truck", "cueGreen"],
+        payment: ["card", "cueOrange"],
+    };
+
+    const lowMapping = {
+        customer: ["tag", "cuePurple"],
+        address: ["compass", "cueOrange"],
+        delivery: ["package", "cueBlue"],
+        payment: ["shield", "cueGreen"],
+    };
+
+    const mapping = isLPC
+        ? lowMapping
+        : highMapping;
+
+    const [iconName, colorClass] = mapping[kind];
+
+    return (
+        <span
+            className={`${styles.cue} ${styles[colorClass]}`}
+            aria-hidden="true"
+        >
+      <CueSvg name={iconName} />
+    </span>
+    );
+}
+
+function LockIcon() {
+    return (
+        <svg
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+            className={styles.inlineIcon}
+        >
+            <rect
+                x="4.5"
+                y="8"
+                width="11"
+                height="8"
+                rx="2"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+            />
+
+            <path
+                d="M7 8V6a3 3 0 0 1 6 0v2"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+            />
+        </svg>
+    );
+}
+
+function ActionIcon({ isLPC }) {
+    return (
+        <svg
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+            className={styles.buttonIcon}
+        >
+            {isLPC ? (
+                <path
+                    d="m4.5 10 3.3 3.3 7.7-7.6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            ) : (
+                <path
+                    d="M4 10h11M11 6l4 4-4 4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            )}
+        </svg>
+    );
+}
+
 export default function CheckoutPage() {
     const router = useRouter();
 
-    const [participantId, setParticipantId] = useState("");
-    const [selectedDevice, setSelectedDevice] = useState("");
-    const [conditionIndex, setConditionIndex] = useState(0);
+    const [studySession, setStudySession] =
+        useState(null);
 
-    const [trialId, setTrialId] = useState(null);
-    const [form, setForm] = useState({ ...EMPTY_FORM });
+    const [trialId, setTrialId] =
+        useState(null);
 
-    const [screen, setScreen] = useState("loading");
-    const [error, setError] = useState("");
+    const [form, setForm] =
+        useState({ ...EMPTY_FORM });
 
-    const isMobile = selectedDevice === "mobile";
+    const [screen, setScreen] =
+        useState("instructions");
 
-    const condition = isMobile
-        ? MOBILE_CONDITIONS[conditionIndex]
-        : "HPC-HOC";
-
-    const isLOC =
-        isMobile && condition.endsWith("LOC");
-
-    const isLPC =
-        isMobile && condition.startsWith("LPC");
-
-    const scenarioIndex = isMobile
-        ? conditionIndex + 1
-        : 0;
-
-    const scenario =
-        CHECKOUT_SCENARIOS[scenarioIndex] ||
-        CHECKOUT_SCENARIOS[0];
-
-    const trialOrder = isMobile
-        ? conditionIndex + 2
-        : 1;
+    const [error, setError] =
+        useState("");
 
     useEffect(() => {
-        const storedParticipantId =
+        const participantId =
             sessionStorage.getItem("participantId");
 
-        const storedDevice =
+        const selectedDevice =
             sessionStorage.getItem("selectedDevice");
 
-        const storedTask =
+        const selectedTask =
             sessionStorage.getItem("selectedTask");
 
         if (
-            !storedParticipantId ||
-            !storedDevice ||
-            storedTask !== "task1"
+            !participantId ||
+            !selectedDevice ||
+            selectedTask !== "task1"
         ) {
             router.replace("/");
             return;
         }
 
-        let storedConditionIndex = Number(
-            sessionStorage.getItem("conditionIndex") || "0",
+        let conditionIndex = Number(
+            sessionStorage.getItem(
+                "conditionIndex",
+            ) || "0",
         );
 
         if (
-            storedDevice !== "mobile" ||
-            storedConditionIndex < 0 ||
-            storedConditionIndex >= MOBILE_CONDITIONS.length
+            selectedDevice !== "mobile" ||
+            conditionIndex < 0 ||
+            conditionIndex >=
+            MOBILE_CONDITIONS.length
         ) {
-            storedConditionIndex = 0;
+            conditionIndex = 0;
         }
 
-        setParticipantId(storedParticipantId);
-        setSelectedDevice(storedDevice);
-        setConditionIndex(storedConditionIndex);
-        setScreen("instructions");
+        setStudySession({
+            participantId,
+            selectedDevice,
+            conditionIndex,
+        });
     }, [router]);
+
+    if (!studySession) {
+        return (
+            <main className={styles.page}>
+                <section className={styles.studyCard}>
+                    <p>Loading task...</p>
+                </section>
+            </main>
+        );
+    }
+
+    const {
+        participantId,
+        selectedDevice,
+        conditionIndex,
+    } = studySession;
+
+    const isMobile =
+        selectedDevice === "mobile";
+
+    const condition = isMobile
+        ? getMobileCondition(conditionIndex)
+        : "HPC-HOC";
+
+    const isLOC =
+        isMobile &&
+        condition.endsWith("LOC");
+
+    const isLPC =
+        isMobile &&
+        condition.startsWith("LPC");
+
+    const scenario = getTaskScenario(
+        "task1",
+        selectedDevice,
+        conditionIndex,
+    );
+
+    const trialOrder = isMobile
+        ? conditionIndex + 2
+        : 1;
+
+    const shippingCost =
+        getShippingCost(form.shippingMethod);
+
+    const orderTotal =
+        scenario.price + (shippingCost ?? 0);
+
+    const enteredAddress = isLOC
+        ? form.fullAddress
+        : [
+            form.streetAddress,
+            form.city,
+            form.postalCode,
+        ]
+            .filter(Boolean)
+            .join(", ");
+
+    const pageClassName = `${styles.page} ${
+        isLPC
+            ? styles.lowPerceptual
+            : styles.highPerceptual
+    }`;
 
     function handleChange(event) {
         const { name, value } = event.target;
@@ -236,7 +551,10 @@ export default function CheckoutPage() {
             setTrialId(result.trial.id);
             setScreen("checkout");
         } catch (caughtError) {
-            console.error("Unable to start trial:", caughtError);
+            console.error(
+                "Unable to start checkout trial:",
+                caughtError,
+            );
 
             setError(
                 caughtError.message ||
@@ -247,11 +565,33 @@ export default function CheckoutPage() {
         }
     }
 
-    async function handleSubmit(event) {
+    function handleReview(event) {
         event.preventDefault();
 
+        setError("");
+        setScreen("review");
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
+    }
+
+    function handleEditInformation() {
+        setError("");
+        setScreen("checkout");
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
+    }
+
+    async function handlePlaceOrder() {
         if (!trialId) {
-            setError("The trial was not started.");
+            setError(
+                "The trial was not started.",
+            );
             return;
         }
 
@@ -268,36 +608,49 @@ export default function CheckoutPage() {
             await completeTrial({
                 trialId,
                 accuracy,
-                completionDevice: selectedDevice,
+                completionDevice:
+                selectedDevice,
             });
 
             setScreen("complete");
         } catch (caughtError) {
-            console.error("Unable to complete trial:", caughtError);
+            console.error(
+                "Unable to complete checkout trial:",
+                caughtError,
+            );
 
             setError(
                 caughtError.message ||
-                "Unable to submit the task.",
+                "Unable to place the order.",
             );
 
-            setScreen("checkout");
+            setScreen("review");
         }
     }
 
     function handleContinue() {
         const hasNextMobileCondition =
             isMobile &&
-            conditionIndex < MOBILE_CONDITIONS.length - 1;
+            conditionIndex <
+            MOBILE_CONDITIONS.length - 1;
 
         if (hasNextMobileCondition) {
-            const nextConditionIndex = conditionIndex + 1;
+            const nextConditionIndex =
+                conditionIndex + 1;
 
             sessionStorage.setItem(
                 "conditionIndex",
                 String(nextConditionIndex),
             );
 
-            setConditionIndex(nextConditionIndex);
+            setStudySession(
+                (currentSession) => ({
+                    ...currentSession,
+                    conditionIndex:
+                    nextConditionIndex,
+                }),
+            );
+
             setTrialId(null);
             setForm({ ...EMPTY_FORM });
             setError("");
@@ -311,17 +664,283 @@ export default function CheckoutPage() {
             return;
         }
 
-        sessionStorage.removeItem("conditionIndex");
+        sessionStorage.removeItem(
+            "conditionIndex",
+        );
+
         router.push("/");
     }
 
-    if (screen === "loading") {
+    function renderNameSection() {
         return (
-            <main className={styles.page}>
-                <section className={styles.card}>
-                    <p>Loading task...</p>
-                </section>
-            </main>
+            <section className={styles.formSection}>
+                <h2 className={styles.sectionTitle}>
+                    <SectionCue
+                        kind="customer"
+                        isLPC={isLPC}
+                    />
+
+                    <span>
+            Customer information
+          </span>
+                </h2>
+
+                <label>
+                    <span>Full name</span>
+
+                    <input
+                        type="text"
+                        name="fullName"
+                        value={form.fullName}
+                        onChange={handleChange}
+                        autoComplete="off"
+                        required
+                    />
+                </label>
+            </section>
+        );
+    }
+
+    function renderSeparateAddressSection() {
+        return (
+            <section className={styles.formSection}>
+                <h2 className={styles.sectionTitle}>
+                    <SectionCue
+                        kind="address"
+                        isLPC={isLPC}
+                    />
+
+                    <span>Shipping address</span>
+                </h2>
+
+                <div className={styles.fieldGrid}>
+                    <label className={styles.fullWidth}>
+                        <span>Street address</span>
+
+                        <input
+                            type="text"
+                            name="streetAddress"
+                            value={form.streetAddress}
+                            onChange={handleChange}
+                            autoComplete="off"
+                            required
+                        />
+                    </label>
+
+                    <label>
+                        <span>City</span>
+
+                        <input
+                            type="text"
+                            name="city"
+                            value={form.city}
+                            onChange={handleChange}
+                            autoComplete="off"
+                            required
+                        />
+                    </label>
+
+                    <label>
+                        <span>Postal code</span>
+
+                        <input
+                            type="text"
+                            name="postalCode"
+                            value={form.postalCode}
+                            onChange={handleChange}
+                            autoComplete="off"
+                            required
+                        />
+                    </label>
+                </div>
+            </section>
+        );
+    }
+
+    function renderFullAddressSection() {
+        return (
+            <section className={styles.formSection}>
+                <h2 className={styles.sectionTitle}>
+                    <SectionCue
+                        kind="address"
+                        isLPC={isLPC}
+                    />
+
+                    <span>Shipping address</span>
+                </h2>
+
+                <label>
+                    <span>Full address</span>
+
+                    <input
+                        type="text"
+                        name="fullAddress"
+                        value={form.fullAddress}
+                        onChange={handleChange}
+                        placeholder="Street, city, postal code"
+                        autoComplete="off"
+                        required
+                    />
+                </label>
+            </section>
+        );
+    }
+
+    function renderDeliverySection() {
+        return (
+            <section className={styles.formSection}>
+                <h2 className={styles.sectionTitle}>
+                    <SectionCue
+                        kind="delivery"
+                        isLPC={isLPC}
+                    />
+
+                    <span>Delivery</span>
+                </h2>
+
+                <label>
+                    <span>Shipping method</span>
+
+                    <select
+                        name="shippingMethod"
+                        value={form.shippingMethod}
+                        onChange={handleChange}
+                        required
+                    >
+                        <option value="">
+                            Select a shipping method
+                        </option>
+
+                        <option value="standard">
+                            Standard shipping
+                        </option>
+
+                        <option value="express">
+                            Express shipping
+                        </option>
+                    </select>
+                </label>
+            </section>
+        );
+    }
+
+    function renderPaymentSection() {
+        return (
+            <section className={styles.formSection}>
+                <h2 className={styles.sectionTitle}>
+                    <SectionCue
+                        kind="payment"
+                        isLPC={isLPC}
+                    />
+
+                    <span>Payment</span>
+                </h2>
+
+                <label>
+                    <span>Payment method</span>
+
+                    <select
+                        name="paymentMethod"
+                        value={form.paymentMethod}
+                        onChange={handleChange}
+                        required
+                    >
+                        <option value="">
+                            Select a payment method
+                        </option>
+
+                        <option value="study-card">
+                            Study Card
+                        </option>
+
+                        <option value="paypal">
+                            PayPal
+                        </option>
+                    </select>
+                </label>
+            </section>
+        );
+    }
+
+    function renderProductHeader() {
+        return (
+            <header className={styles.productHeader}>
+                <div className={styles.storeIdentity}>
+          <span className={styles.storeMark}>
+            <CueSvg name="box" />
+          </span>
+
+                    <span>Online Store</span>
+                </div>
+
+                <div className={styles.secureBadge}>
+                    <LockIcon />
+                    <span>Secure checkout</span>
+                </div>
+            </header>
+        );
+    }
+
+    function renderOrderSummary() {
+        return (
+            <aside className={styles.summaryPanel}>
+                <div className={styles.summaryContent}>
+                    <h2>Order summary</h2>
+
+                    <div className={styles.productRow}>
+                        <div className={styles.productThumbnail}>
+                            <CueSvg name="box" />
+                        </div>
+
+                        <div className={styles.productInformation}>
+                            <h3>{scenario.product}</h3>
+                            <p>Quantity: 1</p>
+                        </div>
+
+                        <strong>
+                            {formatCurrency(scenario.price)}
+                        </strong>
+                    </div>
+
+                    <div className={styles.totalSection}>
+                        <div>
+                            <span>Subtotal</span>
+
+                            <strong>
+                                {formatCurrency(scenario.price)}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Shipping</span>
+
+                            <strong>
+                                {shippingCost === null
+                                    ? "Not selected"
+                                    : shippingCost === 0
+                                        ? "Free"
+                                        : formatCurrency(shippingCost)}
+                            </strong>
+                        </div>
+
+                        <div className={styles.totalRow}>
+                            <span>Total</span>
+
+                            <strong>
+                                {formatCurrency(orderTotal)}
+                            </strong>
+                        </div>
+                    </div>
+
+                    <p className={styles.secureNote}>
+                        <LockIcon />
+
+                        <span>
+            Your checkout information is protected.
+          </span>
+                    </p>
+                </div>
+            </aside>
         );
     }
 
@@ -330,88 +949,37 @@ export default function CheckoutPage() {
         screen === "starting"
     ) {
         return (
-            <main
-                className={`${styles.page} ${
-                    isLPC
-                        ? styles.lowPerceptual
-                        : styles.highPerceptual
-                }`}
-            >
-                <section className={styles.card}>
+            <main className={pageClassName}>
+                <section className={styles.studyCard}>
                     <p className={styles.studyLabel}>
                         {isMobile
-                            ? `Task 1 · Round ${conditionIndex + 1} of 4`
+                            ? `Task 1 · Round ${
+                                conditionIndex + 1
+                            } of 4`
                             : "Task 1 · Reference"}
                     </p>
 
-                    <h1>Checkout Task</h1>
+                    <h1>Checkout task</h1>
 
                     <p className={styles.description}>
-                        Use the information below to complete the checkout.
+                        Complete the checkout using the
+                        task information provided to you.
+                        The required information will not
+                        be displayed in this application.
                     </p>
 
-                    <div className={styles.instructions}>
-                        <dl className={styles.taskDetails}>
-                            <div>
-                                <dt>Product</dt>
-                                <dd>{scenario.product}</dd>
-                            </div>
-
-                            <div>
-                                <dt>Full name</dt>
-                                <dd>{scenario.fullName}</dd>
-                            </div>
-
-                            {isLOC ? (
-                                <div>
-                                    <dt>Full address</dt>
-                                    <dd>{getFullAddress(scenario)}</dd>
-                                </div>
-                            ) : (
-                                <>
-                                    <div>
-                                        <dt>Street address</dt>
-                                        <dd>{scenario.streetAddress}</dd>
-                                    </div>
-
-                                    <div>
-                                        <dt>City</dt>
-                                        <dd>{scenario.city}</dd>
-                                    </div>
-
-                                    <div>
-                                        <dt>Postal code</dt>
-                                        <dd>{scenario.postalCode}</dd>
-                                    </div>
-                                </>
-                            )}
-
-                            <div>
-                                <dt>Shipping method</dt>
-                                <dd>
-                                    {scenario.shippingMethod === "standard"
-                                        ? "Standard shipping"
-                                        : "Express shipping"}
-                                </dd>
-                            </div>
-
-                            <div>
-                                <dt>Payment method</dt>
-                                <dd>
-                                    {scenario.paymentMethod === "study-card"
-                                        ? "Study Card"
-                                        : "PayPal"}
-                                </dd>
-                            </div>
-                        </dl>
-                    </div>
-
                     <p className={styles.notice}>
-                        The timer starts when you select Begin Task.
+                        Make sure the task information is
+                        available before continuing. The
+                        timer starts when you select Begin
+                        Task.
                     </p>
 
                     {error && (
-                        <p className={styles.error}>
+                        <p
+                            className={styles.error}
+                            role="alert"
+                        >
                             {error}
                         </p>
                     )}
@@ -422,9 +990,15 @@ export default function CheckoutPage() {
                         onClick={handleBeginTask}
                         disabled={screen === "starting"}
                     >
-                        {screen === "starting"
-                            ? "Starting..."
-                            : "Begin Task"}
+            <span>
+              {screen === "starting"
+                  ? "Starting..."
+                  : "Begin Task"}
+            </span>
+
+                        {screen !== "starting" && (
+                            <ActionIcon isLPC={isLPC} />
+                        )}
                     </button>
                 </section>
             </main>
@@ -434,21 +1008,21 @@ export default function CheckoutPage() {
     if (screen === "complete") {
         const hasNextMobileCondition =
             isMobile &&
-            conditionIndex < MOBILE_CONDITIONS.length - 1;
+            conditionIndex <
+            MOBILE_CONDITIONS.length - 1;
 
         return (
-            <main
-                className={`${styles.page} ${
-                    isLPC
-                        ? styles.lowPerceptual
-                        : styles.highPerceptual
-                }`}
-            >
-                <section className={styles.card}>
+            <main className={pageClassName}>
+                <section className={styles.studyCard}>
+
+                    <div className={styles.successIcon}>
+                        <ActionIcon isLPC />
+                    </div>
+
                     <h1>
                         {hasNextMobileCondition
-                            ? "Round Completed"
-                            : "Task 1 Completed"}
+                            ? "Round completed"
+                            : "Task 1 completed"}
                     </h1>
 
                     <p className={styles.description}>
@@ -460,287 +1034,255 @@ export default function CheckoutPage() {
                         className={styles.primaryButton}
                         onClick={handleContinue}
                     >
-                        {hasNextMobileCondition
-                            ? "Continue"
-                            : "Return to Homepage"}
+            <span>
+              {hasNextMobileCondition
+                  ? "Continue"
+                  : "Return to Homepage"}
+            </span>
+
+                        <ActionIcon isLPC={isLPC} />
                     </button>
                 </section>
             </main>
         );
     }
 
-    return (
-        <main
-            className={`${styles.page} ${
-                isLPC
-                    ? styles.lowPerceptual
-                    : styles.highPerceptual
-            }`}
-        >
-            <div className={styles.checkoutLayout}>
-                <section className={styles.checkoutCard}>
-                    <header className={styles.checkoutHeader}>
-                        <p className={styles.studyLabel}>
-                            {isMobile
-                                ? `Task 1 · Round ${conditionIndex + 1} of 4`
-                                : "Task 1 · Reference"}
-                        </p>
+    if (
+        screen === "review" ||
+        screen === "submitting"
+    ) {
+        return (
+            <main className={pageClassName}>
+                <div className={styles.checkoutShell}>
+                    {renderProductHeader()}
 
-                        <h1>Checkout</h1>
-                    </header>
-
-                    <form
-                        className={styles.form}
-                        onSubmit={handleSubmit}
-                    >
-                        <section className={styles.formSection}>
-                            <h2>Customer Information</h2>
-
-                            <label>
-                                <span>Full name</span>
-
-                                <input
-                                    type="text"
-                                    name="fullName"
-                                    value={form.fullName}
-                                    onChange={handleChange}
-                                    autoComplete="off"
-                                    required
-                                />
-                            </label>
-                        </section>
-
-                        {isLOC ? (
-                            <>
-                                <section className={styles.formSection}>
-                                    <h2>Delivery</h2>
-
-                                    <label>
-                                        <span>Shipping method</span>
-
-                                        <select
-                                            name="shippingMethod"
-                                            value={form.shippingMethod}
-                                            onChange={handleChange}
-                                            required
-                                        >
-                                            <option value="">
-                                                Select a shipping method
-                                            </option>
-
-                                            <option value="standard">
-                                                Standard shipping
-                                            </option>
-
-                                            <option value="express">
-                                                Express shipping
-                                            </option>
-                                        </select>
-                                    </label>
-                                </section>
-
-                                <section className={styles.formSection}>
-                                    <h2>Shipping Address</h2>
-
-                                    <label>
-                                        <span>Full address</span>
-
-                                        <input
-                                            type="text"
-                                            name="fullAddress"
-                                            value={form.fullAddress}
-                                            onChange={handleChange}
-                                            placeholder="100 College St, Toronto, M1M 1X1"
-                                            autoComplete="off"
-                                            required
-                                        />
-                                    </label>
-                                </section>
-                            </>
-                        ) : (
-                            <>
-                                <section className={styles.formSection}>
-                                    <h2>Shipping Address</h2>
-
-                                    <div className={styles.fieldGrid}>
-                                        <label className={styles.fullWidth}>
-                                            <span>Street address</span>
-
-                                            <input
-                                                type="text"
-                                                name="streetAddress"
-                                                value={form.streetAddress}
-                                                onChange={handleChange}
-                                                autoComplete="off"
-                                                required
-                                            />
-                                        </label>
-
-                                        <label>
-                                            <span>City</span>
-
-                                            <input
-                                                type="text"
-                                                name="city"
-                                                value={form.city}
-                                                onChange={handleChange}
-                                                autoComplete="off"
-                                                required
-                                            />
-                                        </label>
-
-                                        <label>
-                                            <span>Postal code</span>
-
-                                            <input
-                                                type="text"
-                                                name="postalCode"
-                                                value={form.postalCode}
-                                                onChange={handleChange}
-                                                autoComplete="off"
-                                                required
-                                            />
-                                        </label>
-                                    </div>
-                                </section>
-
-                                <section className={styles.formSection}>
-                                    <h2>Delivery</h2>
-
-                                    <label>
-                                        <span>Shipping method</span>
-
-                                        <select
-                                            name="shippingMethod"
-                                            value={form.shippingMethod}
-                                            onChange={handleChange}
-                                            required
-                                        >
-                                            <option value="">
-                                                Select a shipping method
-                                            </option>
-
-                                            <option value="standard">
-                                                Standard shipping
-                                            </option>
-
-                                            <option value="express">
-                                                Express shipping
-                                            </option>
-                                        </select>
-                                    </label>
-                                </section>
-                            </>
-                        )}
-
-                        <section className={styles.formSection}>
-                            <h2>Payment</h2>
-
-                            <label>
-                                <span>Payment method</span>
-
-                                <select
-                                    name="paymentMethod"
-                                    value={form.paymentMethod}
-                                    onChange={handleChange}
-                                    required
-                                >
-                                    <option value="">
-                                        Select a payment method
-                                    </option>
-
-                                    <option value="study-card">
-                                        Study Card
-                                    </option>
-
-                                    <option value="paypal">
-                                        PayPal
-                                    </option>
-                                </select>
-                            </label>
-                        </section>
-
-                        {error && (
-                            <p className={styles.error}>
-                                {error}
-                            </p>
-                        )}
-
-                        <button
-                            type="submit"
-                            className={styles.primaryButton}
-                            disabled={screen === "submitting"}
+                    <div className={styles.checkoutLayout}>
+                        <section
+                            className={styles.checkoutCard}
                         >
-                            {screen === "submitting"
-                                ? "Submitting..."
-                                : "Place Order"}
-                        </button>
-                    </form>
-                </section>
+                            <header
+                                className={
+                                    styles.checkoutHeader
+                                }
+                            >
+                                <p className={styles.studyLabel}>
+                                    Review order
+                                </p>
 
-                <aside className={styles.summaryCard}>
-                    <h2>Order Details</h2>
+                                <h1>
+                                    Confirm your information
+                                </h1>
 
-                    <div className={styles.product}>
-                        <div>
-                            <h3>{scenario.product}</h3>
-                            <p>Quantity: 1</p>
-                        </div>
+                                <p>
+                                    Review the information you
+                                    entered before placing the
+                                    order.
+                                </p>
+                            </header>
 
-                        <strong>
-                            ${scenario.price.toFixed(2)}
-                        </strong>
-                    </div>
+                            <div
+                                className={
+                                    styles.reviewSection
+                                }
+                            >
+                                <h2>Customer</h2>
 
-                    <dl className={styles.summaryDetails}>
-                        <div>
-                            <dt>Name</dt>
-                            <dd>{scenario.fullName}</dd>
-                        </div>
-
-                        {isLOC ? (
-                            <div>
-                                <dt>Address</dt>
-                                <dd>{getFullAddress(scenario)}</dd>
+                                <div
+                                    className={styles.reviewRow}
+                                >
+                                    <span>Full name</span>
+                                    <strong>
+                                        {form.fullName}
+                                    </strong>
+                                </div>
                             </div>
-                        ) : (
-                            <>
-                                <div>
-                                    <dt>Street</dt>
-                                    <dd>{scenario.streetAddress}</dd>
+
+                            <div
+                                className={
+                                    styles.reviewSection
+                                }
+                            >
+                                <h2>Shipping address</h2>
+
+                                <div
+                                    className={styles.reviewRow}
+                                >
+                                    <span>Address</span>
+                                    <strong>
+                                        {enteredAddress}
+                                    </strong>
+                                </div>
+                            </div>
+
+                            <div
+                                className={
+                                    styles.reviewSection
+                                }
+                            >
+                                <h2>
+                                    Delivery and payment
+                                </h2>
+
+                                <div
+                                    className={styles.reviewRow}
+                                >
+                  <span>
+                    Shipping method
+                  </span>
+
+                                    <strong>
+                                        {getShippingLabel(
+                                            form.shippingMethod,
+                                        )}
+                                    </strong>
                                 </div>
 
-                                <div>
-                                    <dt>City</dt>
-                                    <dd>{scenario.city}</dd>
+                                <div
+                                    className={styles.reviewRow}
+                                >
+                  <span>
+                    Payment method
+                  </span>
+
+                                    <strong>
+                                        {getPaymentLabel(
+                                            form.paymentMethod,
+                                        )}
+                                    </strong>
                                 </div>
+                            </div>
 
-                                <div>
-                                    <dt>Postal code</dt>
-                                    <dd>{scenario.postalCode}</dd>
-                                </div>
-                            </>
-                        )}
+                            {error && (
+                                <p
+                                    className={styles.error}
+                                    role="alert"
+                                >
+                                    {error}
+                                </p>
+                            )}
 
-                        <div>
-                            <dt>Shipping</dt>
-                            <dd>
-                                {scenario.shippingMethod === "standard"
-                                    ? "Standard"
-                                    : "Express"}
-                            </dd>
-                        </div>
+                            <div
+                                className={
+                                    styles.reviewActions
+                                }
+                            >
+                                <button
+                                    type="button"
+                                    className={
+                                        styles.secondaryButton
+                                    }
+                                    onClick={
+                                        handleEditInformation
+                                    }
+                                    disabled={
+                                        screen === "submitting"
+                                    }
+                                >
+                                    Edit information
+                                </button>
 
-                        <div>
-                            <dt>Payment</dt>
-                            <dd>
-                                {scenario.paymentMethod === "study-card"
-                                    ? "Study Card"
-                                    : "PayPal"}
-                            </dd>
-                        </div>
-                    </dl>
-                </aside>
+                                <button
+                                    type="button"
+                                    className={
+                                        styles.primaryButton
+                                    }
+                                    onClick={handlePlaceOrder}
+                                    disabled={
+                                        screen === "submitting"
+                                    }
+                                >
+                  <span>
+                    {screen === "submitting"
+                        ? "Placing order..."
+                        : "Place order"}
+                  </span>
+
+                                    {screen !==
+                                        "submitting" && (
+                                            <ActionIcon
+                                                isLPC={isLPC}
+                                            />
+                                        )}
+                                </button>
+                            </div>
+                        </section>
+
+                        {renderOrderSummary()}
+                    </div>
+                </div>
+            </main>
+        );
+    }
+
+    return (
+        <main className={pageClassName}>
+            <div className={styles.checkoutShell}>
+                {renderProductHeader()}
+
+                <div className={styles.checkoutLayout}>
+                    <section className={styles.checkoutCard}>
+                        <header
+                            className={styles.checkoutHeader}
+                        >
+                            <p className={styles.studyLabel}>
+                                {isMobile
+                                    ? `Task 1 · Round ${
+                                        conditionIndex + 1
+                                    } of 4`
+                                    : "Task 1 · Reference"}
+                            </p>
+
+                            <h1>Complete your order</h1>
+
+                            <p>
+                                Enter the customer, delivery,
+                                and payment information.
+                            </p>
+                        </header>
+
+                        <form
+                            className={styles.form}
+                            onSubmit={handleReview}
+                        >
+                            {renderNameSection()}
+
+                            {isLOC ? (
+                                <>
+                                    {renderDeliverySection()}
+                                    {renderFullAddressSection()}
+                                </>
+                            ) : (
+                                <>
+                                    {renderSeparateAddressSection()}
+                                    {renderDeliverySection()}
+                                </>
+                            )}
+
+                            {renderPaymentSection()}
+
+                            {error && (
+                                <p
+                                    className={styles.error}
+                                    role="alert"
+                                >
+                                    {error}
+                                </p>
+                            )}
+
+                            <button
+                                type="submit"
+                                className={
+                                    styles.primaryButton
+                                }
+                            >
+                                <span>Review order</span>
+                                <ActionIcon isLPC={isLPC} />
+                            </button>
+                        </form>
+                    </section>
+
+                    {renderOrderSummary()}
+                </div>
             </div>
         </main>
     );
