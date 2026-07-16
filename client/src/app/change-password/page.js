@@ -175,24 +175,6 @@ function Icon({ name, className }) {
         );
     }
 
-    if (name === "spark") {
-        return (
-            <svg
-                className={className}
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-            >
-                <path
-                    d="m12 3 1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3Z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinejoin="round"
-                />
-            </svg>
-        );
-    }
-
     if (name === "check") {
         return (
             <svg
@@ -233,30 +215,21 @@ function Icon({ name, className }) {
     return null;
 }
 
-function SectionCue({ kind, isLPC }) {
+function SectionCue({ kind }) {
     const highMapping = {
         current: ["key", "cueBlue"],
         new: ["shield", "cueGreen"],
     };
 
-    const lowMapping = {
-        current: ["eye", "cuePurple"],
-        new: ["spark", "cueOrange"],
-    };
-
-    const mapping = isLPC
-        ? lowMapping
-        : highMapping;
-
-    const [iconName, colorClass] = mapping[kind];
+    const [iconName, colorClass] = highMapping[kind];
 
     return (
         <span
             className={`${styles.sectionCue} ${styles[colorClass]}`}
             aria-hidden="true"
         >
-      <Icon name={iconName} />
-    </span>
+            <Icon name={iconName} />
+        </span>
     );
 }
 
@@ -294,6 +267,12 @@ export default function ChangePasswordPage() {
         const selectedTask =
             sessionStorage.getItem("selectedTask");
 
+        const selectedRound =
+            sessionStorage.getItem("selectedRound") || "";
+
+        const storedCondition =
+            sessionStorage.getItem("condition") || "";
+
         if (
             !participantId ||
             !selectedDevice ||
@@ -308,7 +287,6 @@ export default function ChangePasswordPage() {
         );
 
         if (
-            selectedDevice !== "mobile" ||
             conditionIndex < 0 ||
             conditionIndex >= MOBILE_CONDITIONS.length
         ) {
@@ -318,6 +296,8 @@ export default function ChangePasswordPage() {
         setStudySession({
             participantId,
             selectedDevice,
+            selectedRound,
+            storedCondition,
             conditionIndex,
         });
     }, [router]);
@@ -335,21 +315,20 @@ export default function ChangePasswordPage() {
     const {
         participantId,
         selectedDevice,
+        selectedRound,
+        storedCondition,
         conditionIndex,
     } = studySession;
 
     const isMobile =
         selectedDevice === "mobile";
 
-    const condition = isMobile
-        ? getMobileCondition(conditionIndex)
-        : "HPC-HOC";
+    const condition =
+        storedCondition ||
+        getMobileCondition(conditionIndex);
 
     const isLOC =
-        isMobile && condition.endsWith("LOC");
-
-    const isLPC =
-        isMobile && condition.startsWith("LPC");
+        condition.endsWith("LOC");
 
     const scenario = getTaskScenario(
         "task2",
@@ -357,15 +336,30 @@ export default function ChangePasswordPage() {
         conditionIndex,
     );
 
-    const trialOrder = isMobile
-        ? conditionIndex + 7
-        : 6;
+    if (!scenario) {
+        return (
+            <main className={styles.page}>
+                <section className={styles.studyCard}>
+                    <p>Task scenario not found.</p>
+                </section>
+            </main>
+        );
+    }
 
-    const pageClassName = `${styles.page} ${
-        isLPC
-            ? styles.lowPerceptual
-            : styles.highPerceptual
-    }`;
+    const roundNumber =
+        Number(selectedRound) ||
+        (isMobile
+            ? conditionIndex + 3
+            : conditionIndex + 1);
+
+    const trialOrder =
+        roundNumber + 4;
+
+    const roundLabel =
+        `Task 2 · Round ${roundNumber} of 4`;
+
+    const pageClassName =
+        `${styles.page} ${styles.highPerceptual}`;
 
     const passwordRequirements =
         getPasswordRequirements(form.newPassword);
@@ -475,40 +469,7 @@ export default function ChangePasswordPage() {
     }
 
     function handleContinue() {
-        const hasNextMobileCondition =
-            isMobile &&
-            conditionIndex < MOBILE_CONDITIONS.length - 1;
-
-        if (hasNextMobileCondition) {
-            const nextConditionIndex =
-                conditionIndex + 1;
-
-            sessionStorage.setItem(
-                "conditionIndex",
-                String(nextConditionIndex),
-            );
-
-            setStudySession((currentSession) => ({
-                ...currentSession,
-                conditionIndex: nextConditionIndex,
-            }));
-
-            setTrialId(null);
-            setForm({ ...EMPTY_FORM });
-            setVisiblePasswords({ ...HIDDEN_PASSWORDS });
-            setIsMobileMenuOpen(false);
-            setError("");
-            setScreen("instructions");
-
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth",
-            });
-
-            return;
-        }
-
-        sessionStorage.removeItem("conditionIndex");
+        sessionStorage.removeItem("activeTrialId");
         router.push("/");
     }
 
@@ -552,8 +513,8 @@ export default function ChangePasswordPage() {
                         />
 
                         <span>
-              {isVisible ? "Hide" : "Show"}
-            </span>
+                            {isVisible ? "Hide" : "Show"}
+                        </span>
                     </button>
                 </div>
             </label>
@@ -564,10 +525,7 @@ export default function ChangePasswordPage() {
         return (
             <section className={styles.formSection}>
                 <div className={styles.sectionHeading}>
-                    <SectionCue
-                        kind="current"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="current" />
 
                     <div>
                         <h2>Current password</h2>
@@ -592,10 +550,7 @@ export default function ChangePasswordPage() {
         return (
             <section className={styles.formSection}>
                 <div className={styles.sectionHeading}>
-                    <SectionCue
-                        kind="new"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="new" />
 
                     <div>
                         <h2>New password</h2>
@@ -641,8 +596,8 @@ export default function ChangePasswordPage() {
                                                 />
 
                                                 <span>
-                          {requirement.label}
-                        </span>
+                                                    {requirement.label}
+                                                </span>
                                             </li>
                                         ),
                                     )}
@@ -676,10 +631,10 @@ export default function ChangePasswordPage() {
                                 />
 
                                 <span>
-                  {passwordsMatch
-                      ? "Passwords match"
-                      : "Passwords do not match"}
-                </span>
+                                    {passwordsMatch
+                                        ? "Passwords match"
+                                        : "Passwords do not match"}
+                                </span>
                             </p>
                         )}
                     </div>
@@ -696,9 +651,7 @@ export default function ChangePasswordPage() {
             <main className={pageClassName}>
                 <section className={styles.studyCard}>
                     <p className={styles.studyLabel}>
-                        {isMobile
-                            ? `Task 2 · Round ${conditionIndex + 1} of 4`
-                            : "Task 2 · Reference"}
+                        {roundLabel}
                     </p>
 
                     <h1>Change password task</h1>
@@ -720,7 +673,10 @@ export default function ChangePasswordPage() {
                     </div>
 
                     {error && (
-                        <p className={styles.error} role="alert">
+                        <p
+                            className={styles.error}
+                            role="alert"
+                        >
                             {error}
                         </p>
                     )}
@@ -741,10 +697,6 @@ export default function ChangePasswordPage() {
     }
 
     if (screen === "complete") {
-        const hasNextMobileCondition =
-            isMobile &&
-            conditionIndex < MOBILE_CONDITIONS.length - 1;
-
         return (
             <main className={pageClassName}>
                 <section className={styles.studyCard}>
@@ -752,11 +704,7 @@ export default function ChangePasswordPage() {
                         <Icon name="check" />
                     </div>
 
-                    <h1>
-                        {hasNextMobileCondition
-                            ? "Round completed"
-                            : "Task 2 completed"}
-                    </h1>
+                    <h1>Task 2 completed</h1>
 
                     <p className={styles.description}>
                         Your response has been recorded.
@@ -767,9 +715,7 @@ export default function ChangePasswordPage() {
                         className={styles.primaryButton}
                         onClick={handleContinue}
                     >
-                        {hasNextMobileCondition
-                            ? "Continue"
-                            : "Return to Homepage"}
+                        Return to Homepage
                     </button>
                 </section>
             </main>
@@ -780,9 +726,9 @@ export default function ChangePasswordPage() {
         <main className={pageClassName}>
             <header className={styles.appHeader}>
                 <div className={styles.brand}>
-          <span className={styles.brandIcon}>
-            <Icon name="lock" />
-          </span>
+                    <span className={styles.brandIcon}>
+                        <Icon name="lock" />
+                    </span>
 
                     <div>
                         <strong>Account settings</strong>
@@ -791,9 +737,9 @@ export default function ChangePasswordPage() {
                 </div>
 
                 <div className={styles.headerActions}>
-          <span className={styles.secureStatus}>
-            Secure session
-          </span>
+                    <span className={styles.secureStatus}>
+                        Secure session
+                    </span>
 
                     <button
                         type="button"
@@ -829,8 +775,8 @@ export default function ChangePasswordPage() {
                 <span>Profile</span>
 
                 <span className={styles.mobileMenuActive}>
-          Security
-        </span>
+                    Security
+                </span>
 
                 <span>Notifications</span>
 
@@ -847,8 +793,8 @@ export default function ChangePasswordPage() {
                     <span>Profile</span>
 
                     <span className={styles.activeNavigationItem}>
-            Security
-          </span>
+                        Security
+                    </span>
 
                     <span>Notifications</span>
 
@@ -858,9 +804,7 @@ export default function ChangePasswordPage() {
                 <section className={styles.settingsContent}>
                     <header className={styles.pageHeader}>
                         <p className={styles.studyLabel}>
-                            {isMobile
-                                ? `Task 2 · Round ${conditionIndex + 1} of 4`
-                                : "Task 2 · Reference"}
+                            {roundLabel}
                         </p>
 
                         <h1>Password and security</h1>
@@ -888,7 +832,10 @@ export default function ChangePasswordPage() {
                         )}
 
                         {error && (
-                            <p className={styles.error} role="alert">
+                            <p
+                                className={styles.error}
+                                role="alert"
+                            >
                                 {error}
                             </p>
                         )}

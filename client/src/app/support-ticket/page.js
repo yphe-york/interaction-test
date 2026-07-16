@@ -230,103 +230,6 @@ function Icon({ name, className }) {
         );
     }
 
-    if (name === "bell") {
-        return (
-            <svg
-                className={className}
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-            >
-                <path
-                    d="M6 17h12l-1.5-2.5V10a4.5 4.5 0 0 0-9 0v4.5L6 17Z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinejoin="round"
-                />
-
-                <path
-                    d="M10 20h4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                />
-            </svg>
-        );
-    }
-
-    if (name === "compass") {
-        return (
-            <svg
-                className={className}
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-            >
-                <circle
-                    cx="12"
-                    cy="12"
-                    r="9"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                />
-
-                <path
-                    d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8 4.8-2.2Z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinejoin="round"
-                />
-            </svg>
-        );
-    }
-
-    if (name === "chat") {
-        return (
-            <svg
-                className={className}
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-            >
-                <path
-                    d="M4 5h16v12H9l-5 4V5Z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinejoin="round"
-                />
-
-                <path
-                    d="M8 9h8M8 13h5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                />
-            </svg>
-        );
-    }
-
-    if (name === "star") {
-        return (
-            <svg
-                className={className}
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-            >
-                <path
-                    d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinejoin="round"
-                />
-            </svg>
-        );
-    }
-
     if (name === "check") {
         return (
             <svg
@@ -349,7 +252,7 @@ function Icon({ name, className }) {
     return null;
 }
 
-function SectionCue({ kind, isLPC }) {
+function SectionCue({ kind }) {
     const highMapping = {
         category: ["grid", "cueBlue"],
         subject: ["tag", "cuePurple"],
@@ -357,26 +260,15 @@ function SectionCue({ kind, isLPC }) {
         priority: ["flag", "cueOrange"],
     };
 
-    const lowMapping = {
-        category: ["bell", "cuePurple"],
-        subject: ["compass", "cueOrange"],
-        description: ["chat", "cueBlue"],
-        priority: ["star", "cueGreen"],
-    };
-
-    const mapping = isLPC
-        ? lowMapping
-        : highMapping;
-
-    const [iconName, colorClass] = mapping[kind];
+    const [iconName, colorClass] = highMapping[kind];
 
     return (
         <span
             className={`${styles.sectionCue} ${styles[colorClass]}`}
             aria-hidden="true"
         >
-      <Icon name={iconName} />
-    </span>
+            <Icon name={iconName} />
+        </span>
     );
 }
 
@@ -411,6 +303,12 @@ export default function SupportTicketPage() {
         const selectedTask =
             sessionStorage.getItem("selectedTask");
 
+        const selectedRound =
+            sessionStorage.getItem("selectedRound") || "";
+
+        const storedCondition =
+            sessionStorage.getItem("condition") || "";
+
         if (
             !participantId ||
             !selectedDevice ||
@@ -425,7 +323,6 @@ export default function SupportTicketPage() {
         );
 
         if (
-            selectedDevice !== "mobile" ||
             conditionIndex < 0 ||
             conditionIndex >= MOBILE_CONDITIONS.length
         ) {
@@ -435,6 +332,8 @@ export default function SupportTicketPage() {
         setStudySession({
             participantId,
             selectedDevice,
+            selectedRound,
+            storedCondition,
             conditionIndex,
         });
     }, [router]);
@@ -452,21 +351,20 @@ export default function SupportTicketPage() {
     const {
         participantId,
         selectedDevice,
+        selectedRound,
+        storedCondition,
         conditionIndex,
     } = studySession;
 
     const isMobile =
         selectedDevice === "mobile";
 
-    const condition = isMobile
-        ? getMobileCondition(conditionIndex)
-        : "HPC-HOC";
+    const condition =
+        storedCondition ||
+        getMobileCondition(conditionIndex);
 
     const isLOC =
-        isMobile && condition.endsWith("LOC");
-
-    const isLPC =
-        isMobile && condition.startsWith("LPC");
+        condition.endsWith("LOC");
 
     const scenario = getTaskScenario(
         "task3",
@@ -474,19 +372,35 @@ export default function SupportTicketPage() {
         conditionIndex,
     );
 
-    const trialOrder = isMobile
-        ? conditionIndex + 12
-        : 11;
+    if (!scenario) {
+        return (
+            <main className={styles.page}>
+                <section className={styles.studyCard}>
+                    <p>Task scenario not found.</p>
+                </section>
+            </main>
+        );
+    }
 
-    const formSectionOrder = isLOC
-        ? LOC_ORDER
-        : HOC_ORDER;
+    const roundNumber =
+        Number(selectedRound) ||
+        (isMobile
+            ? conditionIndex + 3
+            : conditionIndex + 1);
 
-    const pageClassName = `${styles.page} ${
-        isLPC
-            ? styles.lowPerceptual
-            : styles.highPerceptual
-    }`;
+    const trialOrder =
+        roundNumber + 8;
+
+    const roundLabel =
+        `Task 3 · Round ${roundNumber} of 4`;
+
+    const formSectionOrder =
+        isLOC
+            ? LOC_ORDER
+            : HOC_ORDER;
+
+    const pageClassName =
+        `${styles.page} ${styles.highPerceptual}`;
 
     function handleChange(event) {
         const { name, value } = event.target;
@@ -576,39 +490,7 @@ export default function SupportTicketPage() {
     }
 
     function handleContinue() {
-        const hasNextMobileCondition =
-            isMobile &&
-            conditionIndex < MOBILE_CONDITIONS.length - 1;
-
-        if (hasNextMobileCondition) {
-            const nextConditionIndex =
-                conditionIndex + 1;
-
-            sessionStorage.setItem(
-                "conditionIndex",
-                String(nextConditionIndex),
-            );
-
-            setStudySession((currentSession) => ({
-                ...currentSession,
-                conditionIndex: nextConditionIndex,
-            }));
-
-            setTrialId(null);
-            setForm({ ...EMPTY_FORM });
-            setIsMobileMenuOpen(false);
-            setError("");
-            setScreen("instructions");
-
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth",
-            });
-
-            return;
-        }
-
-        sessionStorage.removeItem("conditionIndex");
+        sessionStorage.removeItem("activeTrialId");
         router.push("/");
     }
 
@@ -619,10 +501,7 @@ export default function SupportTicketPage() {
                 key="category"
             >
                 <div className={styles.sectionHeading}>
-                    <SectionCue
-                        kind="category"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="category" />
 
                     <div>
                         <h2>Category</h2>
@@ -678,10 +557,7 @@ export default function SupportTicketPage() {
                 key="subject"
             >
                 <div className={styles.sectionHeading}>
-                    <SectionCue
-                        kind="subject"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="subject" />
 
                     <div>
                         <h2>Subject</h2>
@@ -715,10 +591,7 @@ export default function SupportTicketPage() {
                 key="description"
             >
                 <div className={styles.sectionHeading}>
-                    <SectionCue
-                        kind="description"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="description" />
 
                     <div>
                         <h2>Description</h2>
@@ -742,8 +615,8 @@ export default function SupportTicketPage() {
                     />
 
                     <span className={styles.characterCount}>
-            {form.description.length} characters
-          </span>
+                        {form.description.length} characters
+                    </span>
                 </label>
             </section>
         );
@@ -756,10 +629,7 @@ export default function SupportTicketPage() {
                 key="priority"
             >
                 <div className={styles.sectionHeading}>
-                    <SectionCue
-                        kind="priority"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="priority" />
 
                     <div>
                         <h2>Priority</h2>
@@ -819,9 +689,7 @@ export default function SupportTicketPage() {
             <main className={pageClassName}>
                 <section className={styles.studyCard}>
                     <p className={styles.studyLabel}>
-                        {isMobile
-                            ? `Task 3 · Round ${conditionIndex + 1} of 4`
-                            : "Task 3 · Reference"}
+                        {roundLabel}
                     </p>
 
                     <h1>Submit a support ticket</h1>
@@ -843,7 +711,10 @@ export default function SupportTicketPage() {
                     </div>
 
                     {error && (
-                        <p className={styles.error} role="alert">
+                        <p
+                            className={styles.error}
+                            role="alert"
+                        >
                             {error}
                         </p>
                     )}
@@ -864,10 +735,6 @@ export default function SupportTicketPage() {
     }
 
     if (screen === "complete") {
-        const hasNextMobileCondition =
-            isMobile &&
-            conditionIndex < MOBILE_CONDITIONS.length - 1;
-
         return (
             <main className={pageClassName}>
                 <section className={styles.studyCard}>
@@ -875,11 +742,7 @@ export default function SupportTicketPage() {
                         <Icon name="check" />
                     </div>
 
-                    <h1>
-                        {hasNextMobileCondition
-                            ? "Round completed"
-                            : "Task 3 completed"}
-                    </h1>
+                    <h1>Task 3 completed</h1>
 
                     <p className={styles.description}>
                         Your support request has been recorded.
@@ -890,9 +753,7 @@ export default function SupportTicketPage() {
                         className={styles.primaryButton}
                         onClick={handleContinue}
                     >
-                        {hasNextMobileCondition
-                            ? "Continue"
-                            : "Return to Homepage"}
+                        Return to Homepage
                     </button>
                 </section>
             </main>
@@ -903,9 +764,9 @@ export default function SupportTicketPage() {
         <main className={pageClassName}>
             <header className={styles.appHeader}>
                 <div className={styles.brand}>
-          <span className={styles.brandIcon}>
-            <Icon name="headset" />
-          </span>
+                    <span className={styles.brandIcon}>
+                        <Icon name="headset" />
+                    </span>
 
                     <div>
                         <strong>Support center</strong>
@@ -914,9 +775,9 @@ export default function SupportTicketPage() {
                 </div>
 
                 <div className={styles.headerActions}>
-          <span className={styles.supportStatus}>
-            Support online
-          </span>
+                    <span className={styles.supportStatus}>
+                        Support online
+                    </span>
 
                     <button
                         type="button"
@@ -953,8 +814,8 @@ export default function SupportTicketPage() {
                 <span>My tickets</span>
 
                 <span className={styles.mobileMenuActive}>
-          New request
-        </span>
+                    New request
+                </span>
 
                 <span>Contact support</span>
             </nav>
@@ -970,8 +831,8 @@ export default function SupportTicketPage() {
                     <span>My tickets</span>
 
                     <span className={styles.activeNavigationItem}>
-            New request
-          </span>
+                        New request
+                    </span>
 
                     <span>Contact support</span>
                 </nav>
@@ -979,9 +840,7 @@ export default function SupportTicketPage() {
                 <section className={styles.supportContent}>
                     <header className={styles.pageHeader}>
                         <p className={styles.studyLabel}>
-                            {isMobile
-                                ? `Task 3 · Round ${conditionIndex + 1} of 4`
-                                : "Task 3 · Reference"}
+                            {roundLabel}
                         </p>
 
                         <h1>Create a support request</h1>
@@ -999,7 +858,10 @@ export default function SupportTicketPage() {
                         {formSectionOrder.map(renderFormSection)}
 
                         {error && (
-                            <p className={styles.error} role="alert">
+                            <p
+                                className={styles.error}
+                                role="alert"
+                            >
                                 {error}
                             </p>
                         )}

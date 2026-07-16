@@ -46,7 +46,7 @@ function getFullAddress(scenario) {
 }
 
 function formatCurrency(value) {
-    return `$${value.toFixed(2)}`;
+    return `$${Number(value || 0).toFixed(2)}`;
 }
 
 function getShippingCost(shippingMethod) {
@@ -312,7 +312,7 @@ function CueSvg({ name }) {
     );
 }
 
-function SectionCue({ kind, isLPC }) {
+function SectionCue({ kind }) {
     const highMapping = {
         customer: ["user", "cueBlue"],
         address: ["pin", "cuePurple"],
@@ -320,26 +320,15 @@ function SectionCue({ kind, isLPC }) {
         payment: ["card", "cueOrange"],
     };
 
-    const lowMapping = {
-        customer: ["tag", "cuePurple"],
-        address: ["compass", "cueOrange"],
-        delivery: ["package", "cueBlue"],
-        payment: ["shield", "cueGreen"],
-    };
-
-    const mapping = isLPC
-        ? lowMapping
-        : highMapping;
-
-    const [iconName, colorClass] = mapping[kind];
+    const [iconName, colorClass] = highMapping[kind];
 
     return (
         <span
             className={`${styles.cue} ${styles[colorClass]}`}
             aria-hidden="true"
         >
-      <CueSvg name={iconName} />
-    </span>
+            <CueSvg name={iconName} />
+        </span>
     );
 }
 
@@ -372,32 +361,21 @@ function LockIcon() {
     );
 }
 
-function ActionIcon({ isLPC }) {
+function ActionIcon() {
     return (
         <svg
             viewBox="0 0 20 20"
             aria-hidden="true"
             className={styles.buttonIcon}
         >
-            {isLPC ? (
-                <path
-                    d="m4.5 10 3.3 3.3 7.7-7.6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-            ) : (
-                <path
-                    d="M4 10h11M11 6l4 4-4 4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-            )}
+            <path
+                d="M4 10h11M11 6l4 4-4 4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
         </svg>
     );
 }
@@ -430,6 +408,12 @@ export default function CheckoutPage() {
         const selectedTask =
             sessionStorage.getItem("selectedTask");
 
+        const selectedRound =
+            sessionStorage.getItem("selectedRound") || "";
+
+        const storedCondition =
+            sessionStorage.getItem("condition") || "";
+
         if (
             !participantId ||
             !selectedDevice ||
@@ -440,16 +424,12 @@ export default function CheckoutPage() {
         }
 
         let conditionIndex = Number(
-            sessionStorage.getItem(
-                "conditionIndex",
-            ) || "0",
+            sessionStorage.getItem("conditionIndex") || "0",
         );
 
         if (
-            selectedDevice !== "mobile" ||
             conditionIndex < 0 ||
-            conditionIndex >=
-            MOBILE_CONDITIONS.length
+            conditionIndex >= MOBILE_CONDITIONS.length
         ) {
             conditionIndex = 0;
         }
@@ -457,6 +437,8 @@ export default function CheckoutPage() {
         setStudySession({
             participantId,
             selectedDevice,
+            selectedRound,
+            storedCondition,
             conditionIndex,
         });
     }, [router]);
@@ -474,23 +456,20 @@ export default function CheckoutPage() {
     const {
         participantId,
         selectedDevice,
+        selectedRound,
+        storedCondition,
         conditionIndex,
     } = studySession;
 
     const isMobile =
         selectedDevice === "mobile";
 
-    const condition = isMobile
-        ? getMobileCondition(conditionIndex)
-        : "HPC-HOC";
+    const condition =
+        storedCondition ||
+        getMobileCondition(conditionIndex);
 
     const isLOC =
-        isMobile &&
         condition.endsWith("LOC");
-
-    const isLPC =
-        isMobile &&
-        condition.startsWith("LPC");
 
     const scenario = getTaskScenario(
         "task1",
@@ -498,15 +477,43 @@ export default function CheckoutPage() {
         conditionIndex,
     );
 
-    const trialOrder = isMobile
-        ? conditionIndex + 2
-        : 1;
+    if (!scenario) {
+        return (
+            <main className={styles.page}>
+                <section className={styles.studyCard}>
+                    <p>Task scenario not found.</p>
+                </section>
+            </main>
+        );
+    }
+
+    const scenarioProduct =
+        scenario.product ??
+        scenario.productName ??
+        "Product";
+
+    const scenarioPrice =
+        scenario.price ??
+        scenario.productPrice ??
+        0;
+
+    const roundNumber =
+        Number(selectedRound) ||
+        (isMobile
+            ? conditionIndex + 3
+            : conditionIndex + 1);
+
+    const trialOrder =
+        roundNumber;
+
+    const roundLabel =
+        `Task 1 · Round ${roundNumber} of 4`;
 
     const shippingCost =
         getShippingCost(form.shippingMethod);
 
     const orderTotal =
-        scenario.price + (shippingCost ?? 0);
+        scenarioPrice + (shippingCost ?? 0);
 
     const enteredAddress = isLOC
         ? form.fullAddress
@@ -518,11 +525,8 @@ export default function CheckoutPage() {
             .filter(Boolean)
             .join(", ");
 
-    const pageClassName = `${styles.page} ${
-        isLPC
-            ? styles.lowPerceptual
-            : styles.highPerceptual
-    }`;
+    const pageClassName =
+        `${styles.page} ${styles.highPerceptual}`;
 
     function handleChange(event) {
         const { name, value } = event.target;
@@ -629,45 +633,7 @@ export default function CheckoutPage() {
     }
 
     function handleContinue() {
-        const hasNextMobileCondition =
-            isMobile &&
-            conditionIndex <
-            MOBILE_CONDITIONS.length - 1;
-
-        if (hasNextMobileCondition) {
-            const nextConditionIndex =
-                conditionIndex + 1;
-
-            sessionStorage.setItem(
-                "conditionIndex",
-                String(nextConditionIndex),
-            );
-
-            setStudySession(
-                (currentSession) => ({
-                    ...currentSession,
-                    conditionIndex:
-                    nextConditionIndex,
-                }),
-            );
-
-            setTrialId(null);
-            setForm({ ...EMPTY_FORM });
-            setError("");
-            setScreen("instructions");
-
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth",
-            });
-
-            return;
-        }
-
-        sessionStorage.removeItem(
-            "conditionIndex",
-        );
-
+        sessionStorage.removeItem("activeTrialId");
         router.push("/");
     }
 
@@ -675,14 +641,11 @@ export default function CheckoutPage() {
         return (
             <section className={styles.formSection}>
                 <h2 className={styles.sectionTitle}>
-                    <SectionCue
-                        kind="customer"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="customer" />
 
                     <span>
-            Customer information
-          </span>
+                        Customer information
+                    </span>
                 </h2>
 
                 <label>
@@ -705,10 +668,7 @@ export default function CheckoutPage() {
         return (
             <section className={styles.formSection}>
                 <h2 className={styles.sectionTitle}>
-                    <SectionCue
-                        kind="address"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="address" />
 
                     <span>Shipping address</span>
                 </h2>
@@ -761,10 +721,7 @@ export default function CheckoutPage() {
         return (
             <section className={styles.formSection}>
                 <h2 className={styles.sectionTitle}>
-                    <SectionCue
-                        kind="address"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="address" />
 
                     <span>Shipping address</span>
                 </h2>
@@ -790,10 +747,7 @@ export default function CheckoutPage() {
         return (
             <section className={styles.formSection}>
                 <h2 className={styles.sectionTitle}>
-                    <SectionCue
-                        kind="delivery"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="delivery" />
 
                     <span>Delivery</span>
                 </h2>
@@ -828,10 +782,7 @@ export default function CheckoutPage() {
         return (
             <section className={styles.formSection}>
                 <h2 className={styles.sectionTitle}>
-                    <SectionCue
-                        kind="payment"
-                        isLPC={isLPC}
-                    />
+                    <SectionCue kind="payment" />
 
                     <span>Payment</span>
                 </h2>
@@ -866,9 +817,9 @@ export default function CheckoutPage() {
         return (
             <header className={styles.productHeader}>
                 <div className={styles.storeIdentity}>
-          <span className={styles.storeMark}>
-            <CueSvg name="box" />
-          </span>
+                    <span className={styles.storeMark}>
+                        <CueSvg name="box" />
+                    </span>
 
                     <span>Online Store</span>
                 </div>
@@ -893,12 +844,12 @@ export default function CheckoutPage() {
                         </div>
 
                         <div className={styles.productInformation}>
-                            <h3>{scenario.product}</h3>
+                            <h3>{scenarioProduct}</h3>
                             <p>Quantity: 1</p>
                         </div>
 
                         <strong>
-                            {formatCurrency(scenario.price)}
+                            {formatCurrency(scenarioPrice)}
                         </strong>
                     </div>
 
@@ -907,7 +858,7 @@ export default function CheckoutPage() {
                             <span>Subtotal</span>
 
                             <strong>
-                                {formatCurrency(scenario.price)}
+                                {formatCurrency(scenarioPrice)}
                             </strong>
                         </div>
 
@@ -936,8 +887,8 @@ export default function CheckoutPage() {
                         <LockIcon />
 
                         <span>
-            Your checkout information is protected.
-          </span>
+                            Your checkout information is protected.
+                        </span>
                     </p>
                 </div>
             </aside>
@@ -952,11 +903,7 @@ export default function CheckoutPage() {
             <main className={pageClassName}>
                 <section className={styles.studyCard}>
                     <p className={styles.studyLabel}>
-                        {isMobile
-                            ? `Task 1 · Round ${
-                                conditionIndex + 1
-                            } of 4`
-                            : "Task 1 · Reference"}
+                        {roundLabel}
                     </p>
 
                     <h1>Checkout task</h1>
@@ -990,14 +937,14 @@ export default function CheckoutPage() {
                         onClick={handleBeginTask}
                         disabled={screen === "starting"}
                     >
-            <span>
-              {screen === "starting"
-                  ? "Starting..."
-                  : "Begin Task"}
-            </span>
+                        <span>
+                            {screen === "starting"
+                                ? "Starting..."
+                                : "Begin Task"}
+                        </span>
 
                         {screen !== "starting" && (
-                            <ActionIcon isLPC={isLPC} />
+                            <ActionIcon />
                         )}
                     </button>
                 </section>
@@ -1006,24 +953,27 @@ export default function CheckoutPage() {
     }
 
     if (screen === "complete") {
-        const hasNextMobileCondition =
-            isMobile &&
-            conditionIndex <
-            MOBILE_CONDITIONS.length - 1;
-
         return (
             <main className={pageClassName}>
                 <section className={styles.studyCard}>
-
                     <div className={styles.successIcon}>
-                        <ActionIcon isLPC />
+                        <svg
+                            viewBox="0 0 20 20"
+                            aria-hidden="true"
+                            className={styles.buttonIcon}
+                        >
+                            <path
+                                d="m4.5 10 3.3 3.3 7.7-7.6"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
                     </div>
 
-                    <h1>
-                        {hasNextMobileCondition
-                            ? "Round completed"
-                            : "Task 1 completed"}
-                    </h1>
+                    <h1>Task 1 completed</h1>
 
                     <p className={styles.description}>
                         Your response has been recorded.
@@ -1034,13 +984,8 @@ export default function CheckoutPage() {
                         className={styles.primaryButton}
                         onClick={handleContinue}
                     >
-            <span>
-              {hasNextMobileCondition
-                  ? "Continue"
-                  : "Return to Homepage"}
-            </span>
-
-                        <ActionIcon isLPC={isLPC} />
+                        <span>Return to Homepage</span>
+                        <ActionIcon />
                     </button>
                 </section>
             </main>
@@ -1057,14 +1002,8 @@ export default function CheckoutPage() {
                     {renderProductHeader()}
 
                     <div className={styles.checkoutLayout}>
-                        <section
-                            className={styles.checkoutCard}
-                        >
-                            <header
-                                className={
-                                    styles.checkoutHeader
-                                }
-                            >
+                        <section className={styles.checkoutCard}>
+                            <header className={styles.checkoutHeader}>
                                 <p className={styles.studyLabel}>
                                     Review order
                                 </p>
@@ -1080,16 +1019,10 @@ export default function CheckoutPage() {
                                 </p>
                             </header>
 
-                            <div
-                                className={
-                                    styles.reviewSection
-                                }
-                            >
+                            <div className={styles.reviewSection}>
                                 <h2>Customer</h2>
 
-                                <div
-                                    className={styles.reviewRow}
-                                >
+                                <div className={styles.reviewRow}>
                                     <span>Full name</span>
                                     <strong>
                                         {form.fullName}
@@ -1097,16 +1030,10 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
-                            <div
-                                className={
-                                    styles.reviewSection
-                                }
-                            >
+                            <div className={styles.reviewSection}>
                                 <h2>Shipping address</h2>
 
-                                <div
-                                    className={styles.reviewRow}
-                                >
+                                <div className={styles.reviewRow}>
                                     <span>Address</span>
                                     <strong>
                                         {enteredAddress}
@@ -1114,21 +1041,15 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
-                            <div
-                                className={
-                                    styles.reviewSection
-                                }
-                            >
+                            <div className={styles.reviewSection}>
                                 <h2>
                                     Delivery and payment
                                 </h2>
 
-                                <div
-                                    className={styles.reviewRow}
-                                >
-                  <span>
-                    Shipping method
-                  </span>
+                                <div className={styles.reviewRow}>
+                                    <span>
+                                        Shipping method
+                                    </span>
 
                                     <strong>
                                         {getShippingLabel(
@@ -1137,12 +1058,10 @@ export default function CheckoutPage() {
                                     </strong>
                                 </div>
 
-                                <div
-                                    className={styles.reviewRow}
-                                >
-                  <span>
-                    Payment method
-                  </span>
+                                <div className={styles.reviewRow}>
+                                    <span>
+                                        Payment method
+                                    </span>
 
                                     <strong>
                                         {getPaymentLabel(
@@ -1161,48 +1080,31 @@ export default function CheckoutPage() {
                                 </p>
                             )}
 
-                            <div
-                                className={
-                                    styles.reviewActions
-                                }
-                            >
+                            <div className={styles.reviewActions}>
                                 <button
                                     type="button"
-                                    className={
-                                        styles.secondaryButton
-                                    }
-                                    onClick={
-                                        handleEditInformation
-                                    }
-                                    disabled={
-                                        screen === "submitting"
-                                    }
+                                    className={styles.secondaryButton}
+                                    onClick={handleEditInformation}
+                                    disabled={screen === "submitting"}
                                 >
                                     Edit information
                                 </button>
 
                                 <button
                                     type="button"
-                                    className={
-                                        styles.primaryButton
-                                    }
+                                    className={styles.primaryButton}
                                     onClick={handlePlaceOrder}
-                                    disabled={
-                                        screen === "submitting"
-                                    }
+                                    disabled={screen === "submitting"}
                                 >
-                  <span>
-                    {screen === "submitting"
-                        ? "Placing order..."
-                        : "Place order"}
-                  </span>
+                                    <span>
+                                        {screen === "submitting"
+                                            ? "Placing order..."
+                                            : "Place order"}
+                                    </span>
 
-                                    {screen !==
-                                        "submitting" && (
-                                            <ActionIcon
-                                                isLPC={isLPC}
-                                            />
-                                        )}
+                                    {screen !== "submitting" && (
+                                        <ActionIcon />
+                                    )}
                                 </button>
                             </div>
                         </section>
@@ -1221,15 +1123,9 @@ export default function CheckoutPage() {
 
                 <div className={styles.checkoutLayout}>
                     <section className={styles.checkoutCard}>
-                        <header
-                            className={styles.checkoutHeader}
-                        >
+                        <header className={styles.checkoutHeader}>
                             <p className={styles.studyLabel}>
-                                {isMobile
-                                    ? `Task 1 · Round ${
-                                        conditionIndex + 1
-                                    } of 4`
-                                    : "Task 1 · Reference"}
+                                {roundLabel}
                             </p>
 
                             <h1>Complete your order</h1>
@@ -1271,12 +1167,10 @@ export default function CheckoutPage() {
 
                             <button
                                 type="submit"
-                                className={
-                                    styles.primaryButton
-                                }
+                                className={styles.primaryButton}
                             >
                                 <span>Review order</span>
-                                <ActionIcon isLPC={isLPC} />
+                                <ActionIcon />
                             </button>
                         </form>
                     </section>

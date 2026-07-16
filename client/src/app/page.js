@@ -10,6 +10,45 @@ const TASK_ROUTES = {
   task3: "/support-ticket",
 };
 
+const ROUND_OPTIONS = [
+  {
+    value: "1",
+    label: "Round 1",
+    selectedDevice: "desktop",
+    conditionIndex: "0",
+    condition: "HPC-HOC",
+    conditionKey: "Desktop-HOC",
+    consistency: "high",
+  },
+  {
+    value: "2",
+    label: "Round 2",
+    selectedDevice: "desktop",
+    conditionIndex: "1",
+    condition: "HPC-LOC",
+    conditionKey: "Desktop-LOC",
+    consistency: "low",
+  },
+  {
+    value: "3",
+    label: "Round 3",
+    selectedDevice: "mobile",
+    conditionIndex: "0",
+    condition: "HPC-HOC",
+    conditionKey: "Mobile-HOC",
+    consistency: "high",
+  },
+  {
+    value: "4",
+    label: "Round 4",
+    selectedDevice: "mobile",
+    conditionIndex: "1",
+    condition: "HPC-LOC",
+    conditionKey: "Mobile-LOC",
+    consistency: "low",
+  },
+];
+
 function DesktopIcon() {
   return (
       <svg
@@ -91,7 +130,7 @@ export default function HomePage() {
   const router = useRouter();
 
   const [participantId, setParticipantId] = useState("");
-  const [selectedDevice, setSelectedDevice] = useState("");
+  const [selectedRound, setSelectedRound] = useState("");
   const [selectedTask, setSelectedTask] = useState("");
   const [error, setError] = useState("");
 
@@ -120,13 +159,22 @@ export default function HomePage() {
       return;
     }
 
-    if (!selectedDevice) {
-      setError("Please select a device.");
+    if (!selectedRound) {
+      setError("Please select a round.");
       return;
     }
 
     if (!selectedTask) {
       setError("Please select a task.");
+      return;
+    }
+
+    const roundConfig = ROUND_OPTIONS.find(
+        (option) => option.value === selectedRound,
+    );
+
+    if (!roundConfig) {
+      setError("The selected round is not valid.");
       return;
     }
 
@@ -143,8 +191,13 @@ export default function HomePage() {
     );
 
     sessionStorage.setItem(
+        "selectedRound",
+        roundConfig.value,
+    );
+
+    sessionStorage.setItem(
         "selectedDevice",
-        selectedDevice,
+        roundConfig.selectedDevice,
     );
 
     sessionStorage.setItem(
@@ -152,11 +205,25 @@ export default function HomePage() {
         selectedTask,
     );
 
-    if (selectedDevice === "mobile") {
-      sessionStorage.setItem("conditionIndex", "0");
-    } else {
-      sessionStorage.removeItem("conditionIndex");
-    }
+    sessionStorage.setItem(
+        "conditionIndex",
+        roundConfig.conditionIndex,
+    );
+
+    sessionStorage.setItem(
+        "condition",
+        roundConfig.condition,
+    );
+
+    sessionStorage.setItem(
+        "conditionKey",
+        roundConfig.conditionKey,
+    );
+
+    sessionStorage.setItem(
+        "consistency",
+        roundConfig.consistency,
+    );
 
     sessionStorage.removeItem("activeTrialId");
 
@@ -204,74 +271,55 @@ export default function HomePage() {
             </div>
 
             <fieldset className={styles.optionGroup}>
-              <legend>Select device</legend>
+              <legend>Select round</legend>
 
               <div className={styles.deviceGrid}>
-                <label
-                    className={`${styles.choiceCard} ${
-                        selectedDevice === "desktop"
-                            ? styles.selectedCard
-                            : ""
-                    }`}
-                >
-                  <input
-                      type="radio"
-                      name="device"
-                      value="desktop"
-                      checked={selectedDevice === "desktop"}
-                      onChange={(event) => {
-                        setSelectedDevice(event.target.value);
-                        clearError();
-                      }}
-                  />
+                {ROUND_OPTIONS.map((roundOption) => (
+                    <label
+                        key={roundOption.value}
+                        className={`${styles.choiceCard} ${
+                            selectedRound === roundOption.value
+                                ? styles.selectedCard
+                                : ""
+                        }`}
+                    >
+                      <input
+                          type="radio"
+                          name="round"
+                          value={roundOption.value}
+                          checked={
+                              selectedRound ===
+                              roundOption.value
+                          }
+                          onChange={(event) => {
+                            setSelectedRound(
+                                event.target.value,
+                            );
+                            clearError();
+                          }}
+                      />
 
-                  <span className={styles.optionIcon}>
-                  <DesktopIcon />
-                </span>
+                      <span className={styles.optionIcon}>
+                                        {roundOption.selectedDevice ===
+                                        "desktop" ? (
+                                            <DesktopIcon />
+                                        ) : (
+                                            <MobileIcon />
+                                        )}
+                                    </span>
 
-                  <span className={styles.choiceContent}>
-                  <strong>Desktop</strong>
-                  <small>Computer browser</small>
-                </span>
+                      <span className={styles.choiceContent}>
+                                        <strong>
+                                            {roundOption.label}
+                                        </strong>
+                                    </span>
 
-                  <span
-                      className={styles.radioIndicator}
-                      aria-hidden="true"
-                  />
-                </label>
-
-                <label
-                    className={`${styles.choiceCard} ${
-                        selectedDevice === "mobile"
-                            ? styles.selectedCard
-                            : ""
-                    }`}
-                >
-                  <input
-                      type="radio"
-                      name="device"
-                      value="mobile"
-                      checked={selectedDevice === "mobile"}
-                      onChange={(event) => {
-                        setSelectedDevice(event.target.value);
-                        clearError();
-                      }}
-                  />
-
-                  <span className={styles.optionIcon}>
-                  <MobileIcon />
-                </span>
-
-                  <span className={styles.choiceContent}>
-                  <strong>Mobile</strong>
-                  <small>Mobile browser</small>
-                </span>
-
-                  <span
-                      className={styles.radioIndicator}
-                      aria-hidden="true"
-                  />
-                </label>
+                      <span
+                          className={styles.radioIndicator}
+                          aria-hidden="true"
+                      />
+                    </label>
+                ))}
               </div>
             </fieldset>
 
@@ -293,23 +341,29 @@ export default function HomePage() {
                               type="radio"
                               name="task"
                               value={taskValue}
-                              checked={selectedTask === taskValue}
+                              checked={
+                                  selectedTask === taskValue
+                              }
                               onChange={(event) => {
-                                setSelectedTask(event.target.value);
+                                setSelectedTask(
+                                    event.target.value,
+                                );
                                 clearError();
                               }}
                           />
 
                           <span className={styles.taskNumber}>
-                      {index + 1}
-                    </span>
+                                            {index + 1}
+                                        </span>
 
                           <span className={styles.taskLabel}>
-                      Task {index + 1}
-                    </span>
+                                            Task {index + 1}
+                                        </span>
 
                           <span
-                              className={styles.radioIndicator}
+                              className={
+                                styles.radioIndicator
+                              }
                               aria-hidden="true"
                           />
                         </label>
