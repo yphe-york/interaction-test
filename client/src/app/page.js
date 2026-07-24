@@ -49,55 +49,41 @@ const ROUND_OPTIONS = [
   },
 ];
 
-function DesktopIcon() {
+const TASK_OPTIONS = [
+  {
+    value: "task1",
+    label: "Task 1",
+    number: "1",
+  },
+  {
+    value: "task2",
+    label: "Task 2",
+    number: "2",
+  },
+  {
+    value: "task3",
+    label: "Task 3",
+    number: "3",
+  },
+];
+
+function StoreIcon() {
   return (
       <svg
           viewBox="0 0 24 24"
           aria-hidden="true"
-          className={styles.optionIconSvg}
+          className={styles.brandIcon}
       >
-        <rect
-            x="2.5"
-            y="3.5"
-            width="19"
-            height="13"
-            rx="2"
+        <path
+            d="M4 9h16l-1 11H5L4 9Z"
             fill="none"
             stroke="currentColor"
             strokeWidth="1.8"
+            strokeLinejoin="round"
         />
 
         <path
-            d="M8 20h8M12 16.5V20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-        />
-      </svg>
-  );
-}
-
-function MobileIcon() {
-  return (
-      <svg
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          className={styles.optionIconSvg}
-      >
-        <rect
-            x="7"
-            y="2.5"
-            width="10"
-            height="19"
-            rx="2.3"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-        />
-
-        <path
-            d="M10 5h4M11 18.5h2"
+            d="M8.5 9V6.5a3.5 3.5 0 0 1 7 0V9"
             fill="none"
             stroke="currentColor"
             strokeWidth="1.8"
@@ -232,170 +218,324 @@ export default function HomePage() {
 
   return (
       <main className={styles.page}>
-        <section className={styles.card}>
-          <header className={styles.header}>
-            <p className={styles.studyLabel}>
-              Research Study
-            </p>
+        <header className={styles.siteHeader}>
+          <div className={styles.headerInner}>
+            <div className={styles.brand}>
+                        <span
+                            className={styles.brandMark}
+                            aria-hidden="true"
+                        >
+                            <StoreIcon />
+                        </span>
 
-            <h1>Interaction Consistency Study</h1>
-
-            <p className={styles.description}>
-              Enter the information provided by the researcher
-              to begin your assigned task.
-            </p>
-          </header>
-
-          <form
-              className={styles.form}
-              onSubmit={handleSubmit}
-          >
-            <div className={styles.field}>
-              <label htmlFor="participantId">
-                Participant ID
-              </label>
-
-              <input
-                  id="participantId"
-                  name="participantId"
-                  type="text"
-                  value={participantId}
-                  onChange={(event) => {
-                    setParticipantId(event.target.value);
-                    clearError();
-                  }}
-                  placeholder="For example, P001"
-                  autoComplete="off"
-                  autoFocus
-              />
+              <span className={styles.brandText}>
+                            <strong>MarketLane</strong>
+                            <small>Online shopping</small>
+                        </span>
             </div>
 
-            <fieldset className={styles.optionGroup}>
-              <legend>Select round</legend>
+            <span className={styles.headerMessage}>
+                        Shopping made simple
+                    </span>
+          </div>
+        </header>
 
-              <div className={styles.deviceGrid}>
-                {ROUND_OPTIONS.map((roundOption) => (
-                    <label
-                        key={roundOption.value}
-                        className={`${styles.choiceCard} ${
-                            selectedRound === roundOption.value
-                                ? styles.selectedCard
-                                : ""
-                        }`}
-                    >
-                      <input
-                          type="radio"
-                          name="round"
-                          value={roundOption.value}
-                          checked={
-                              selectedRound ===
-                              roundOption.value
-                          }
-                          onChange={(event) => {
-                            setSelectedRound(
-                                event.target.value,
-                            );
-                            clearError();
-                          }}
-                      />
+        <section className={styles.content}>
+          <div className={styles.card}>
+            <header className={styles.cardHeader}>
+              <h1>Welcome to MarketLane</h1>
 
-                      <span className={styles.optionIcon}>
-                                        {roundOption.selectedDevice ===
-                                        "desktop" ? (
-                                            <DesktopIcon />
-                                        ) : (
-                                            <MobileIcon />
-                                        )}
-                                    </span>
+              <p>
+                Enter your participant ID and select the
+                round and task provided to you.
+              </p>
+            </header>
 
-                      <span className={styles.choiceContent}>
-                                        <strong>
-                                            {roundOption.label}
-                                        </strong>
-                                    </span>
-
-                      <span
-                          className={styles.radioIndicator}
-                          aria-hidden="true"
-                      />
-                    </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className={styles.optionGroup}>
-              <legend>Select task</legend>
-
-              <div className={styles.taskGrid}>
-                {["task1", "task2", "task3"].map(
-                    (taskValue, index) => (
-                        <label
-                            key={taskValue}
-                            className={`${styles.taskCard} ${
-                                selectedTask === taskValue
-                                    ? styles.selectedCard
-                                    : ""
-                            }`}
-                        >
-                          <input
-                              type="radio"
-                              name="task"
-                              value={taskValue}
-                              checked={
-                                  selectedTask === taskValue
-                              }
-                              onChange={(event) => {
-                                setSelectedTask(
-                                    event.target.value,
-                                );
-                                clearError();
-                              }}
-                          />
-
-                          <span className={styles.taskNumber}>
-                                            {index + 1}
-                                        </span>
-
-                          <span className={styles.taskLabel}>
-                                            Task {index + 1}
-                                        </span>
-
-                          <span
-                              className={
-                                styles.radioIndicator
-                              }
-                              aria-hidden="true"
-                          />
-                        </label>
-                    ),
-                )}
-              </div>
-            </fieldset>
-
-            {error && (
-                <p
-                    className={styles.errorMessage}
-                    role="alert"
-                >
-                  {error}
-                </p>
-            )}
-
-            <button
-                type="submit"
-                className={styles.submitButton}
+            <form
+                className={styles.form}
+                onSubmit={handleSubmit}
             >
-              <span>Begin task</span>
-              <ArrowIcon />
-            </button>
-          </form>
+              <section className={styles.formSection}>
+                <div className={styles.sectionHeader}>
+                                <span
+                                    className={styles.sectionNumber}
+                                    aria-hidden="true"
+                                >
+                                    1
+                                </span>
 
-          <p className={styles.privacyNote}>
-            Enter only the participant ID provided by the
-            researcher. Do not enter your name, email address,
-            or other personal information.
-          </p>
+                  <div className={styles.sectionCopy}>
+                    <h2>Participant information</h2>
+
+                    <p>
+                      Enter the participant ID
+                      provided to you.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.field}>
+                  <label htmlFor="participantId">
+                    Participant ID
+                  </label>
+
+                  <input
+                      id="participantId"
+                      name="participantId"
+                      type="text"
+                      value={participantId}
+                      onChange={(event) => {
+                        setParticipantId(
+                            event.target.value,
+                        );
+                        clearError();
+                      }}
+                      placeholder="For example, P001"
+                      autoComplete="off"
+                      autoFocus
+                  />
+                </div>
+              </section>
+
+              <section className={styles.formSection}>
+                <div className={styles.sectionHeader}>
+                                <span
+                                    className={styles.sectionNumber}
+                                    aria-hidden="true"
+                                >
+                                    2
+                                </span>
+
+                  <div className={styles.sectionCopy}>
+                    <h2>Select round</h2>
+
+                    <p>
+                      Select the round provided to
+                      you.
+                    </p>
+                  </div>
+                </div>
+
+                <fieldset className={styles.optionGroup}>
+                  <legend
+                      className={styles.visuallyHidden}
+                  >
+                    Select round
+                  </legend>
+
+                  <div className={styles.roundGrid}>
+                    {ROUND_OPTIONS.map(
+                        (roundOption) => (
+                            <label
+                                key={roundOption.value}
+                                className={`${
+                                    styles.roundCard
+                                } ${
+                                    selectedRound ===
+                                    roundOption.value
+                                        ? styles.selectedCard
+                                        : ""
+                                }`}
+                            >
+                              <input
+                                  type="radio"
+                                  name="round"
+                                  value={
+                                    roundOption.value
+                                  }
+                                  checked={
+                                      selectedRound ===
+                                      roundOption.value
+                                  }
+                                  onChange={(
+                                      event,
+                                  ) => {
+                                    setSelectedRound(
+                                        event
+                                            .target
+                                            .value,
+                                    );
+                                    clearError();
+                                  }}
+                              />
+
+                              <span
+                                  className={
+                                    styles.optionBadge
+                                  }
+                                  aria-hidden="true"
+                              >
+                                                    {
+                                                      roundOption.value
+                                                    }
+                                                </span>
+
+                              <span
+                                  className={
+                                    styles.optionLabel
+                                  }
+                              >
+                                                    {
+                                                      roundOption.label
+                                                    }
+                                                </span>
+
+                              <span
+                                  className={
+                                    styles.radioIndicator
+                                  }
+                                  aria-hidden="true"
+                              />
+                            </label>
+                        ),
+                    )}
+                  </div>
+                </fieldset>
+              </section>
+
+              <section className={styles.formSection}>
+                <div className={styles.sectionHeader}>
+                                <span
+                                    className={styles.sectionNumber}
+                                    aria-hidden="true"
+                                >
+                                    3
+                                </span>
+
+                  <div className={styles.sectionCopy}>
+                    <h2>Select task</h2>
+
+                    <p>
+                      Select the task provided to
+                      you.
+                    </p>
+                  </div>
+                </div>
+
+                <fieldset className={styles.optionGroup}>
+                  <legend
+                      className={styles.visuallyHidden}
+                  >
+                    Select task
+                  </legend>
+
+                  <div className={styles.taskGrid}>
+                    {TASK_OPTIONS.map(
+                        (taskOption) => (
+                            <label
+                                key={taskOption.value}
+                                className={`${
+                                    styles.taskCard
+                                } ${
+                                    selectedTask ===
+                                    taskOption.value
+                                        ? styles.selectedCard
+                                        : ""
+                                }`}
+                            >
+                              <input
+                                  type="radio"
+                                  name="task"
+                                  value={
+                                    taskOption.value
+                                  }
+                                  checked={
+                                      selectedTask ===
+                                      taskOption.value
+                                  }
+                                  onChange={(
+                                      event,
+                                  ) => {
+                                    setSelectedTask(
+                                        event
+                                            .target
+                                            .value,
+                                    );
+                                    clearError();
+                                  }}
+                              />
+
+                              <span
+                                  className={
+                                    styles.optionBadge
+                                  }
+                                  aria-hidden="true"
+                              >
+                                                    {
+                                                      taskOption.number
+                                                    }
+                                                </span>
+
+                              <span
+                                  className={
+                                    styles.optionLabel
+                                  }
+                              >
+                                                    {
+                                                      taskOption.label
+                                                    }
+                                                </span>
+
+                              <span
+                                  className={
+                                    styles.radioIndicator
+                                  }
+                                  aria-hidden="true"
+                              />
+                            </label>
+                        ),
+                    )}
+                  </div>
+                </fieldset>
+              </section>
+
+              {error && (
+                  <p
+                      className={styles.errorMessage}
+                      role="alert"
+                  >
+                    {error}
+                  </p>
+              )}
+
+              <button
+                  type="submit"
+                  className={styles.submitButton}
+              >
+                <span>Continue</span>
+                <ArrowIcon />
+              </button>
+            </form>
+
+            <p className={styles.privacyNote}>
+              Use only the participant ID provided to you.
+              Do not enter your name, email address, or other
+              personal information.
+            </p>
+          </div>
         </section>
+
+        <footer className={styles.footer}>
+          <div className={styles.footerInner}>
+            <div className={styles.footerBrand}>
+                        <span
+                            className={styles.footerMark}
+                            aria-hidden="true"
+                        >
+                            <StoreIcon />
+                        </span>
+
+              <span>
+                            <strong>MarketLane</strong>
+                            <small>Shopping made simple.</small>
+                        </span>
+            </div>
+
+            <span className={styles.copyright}>
+                        © 2026 MarketLane
+                    </span>
+          </div>
+        </footer>
       </main>
   );
 }

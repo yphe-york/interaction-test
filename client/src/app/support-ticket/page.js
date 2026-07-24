@@ -54,12 +54,12 @@ function calculateAccuracy(form, scenario) {
     const correctPriority =
         form.priority === scenario.priority;
 
-    return correctCategory &&
-    correctSubject &&
-    correctDescription &&
-    correctPriority
-        ? 1
-        : 0;
+    return (
+        Number(correctCategory) +
+        Number(correctSubject) +
+        Number(correctDescription) +
+        Number(correctPriority)
+    );
 }
 
 function Icon({ name, className }) {
@@ -180,7 +180,11 @@ function Icon({ name, className }) {
                     strokeLinejoin="round"
                 />
 
-                <circle cx="8.5" cy="8.5" r="1.3" />
+                <circle
+                    cx="8.5"
+                    cy="8.5"
+                    r="1.3"
+                />
             </svg>
         );
     }
@@ -260,11 +264,14 @@ function SectionCue({ kind }) {
         priority: ["flag", "cueOrange"],
     };
 
-    const [iconName, colorClass] = highMapping[kind];
+    const [iconName, colorClass] =
+        highMapping[kind];
 
     return (
         <span
-            className={`${styles.sectionCue} ${styles[colorClass]}`}
+            className={`${styles.sectionCue} ${
+                styles[colorClass]
+            }`}
             aria-hidden="true"
         >
             <Icon name={iconName} />
@@ -395,9 +402,7 @@ export default function SupportTicketPage() {
         `Task 3 · Round ${roundNumber} of 4`;
 
     const formSectionOrder =
-        isLOC
-            ? LOC_ORDER
-            : HOC_ORDER;
+        isLOC ? LOC_ORDER : HOC_ORDER;
 
     const pageClassName =
         `${styles.page} ${styles.highPerceptual}`;
@@ -507,7 +512,8 @@ export default function SupportTicketPage() {
                         <h2>Category</h2>
 
                         <p>
-                            Select the area that best matches the request.
+                            Select the area that best matches
+                            the request.
                         </p>
                     </div>
                 </div>
@@ -563,7 +569,8 @@ export default function SupportTicketPage() {
                         <h2>Subject</h2>
 
                         <p>
-                            Enter a short title describing the request.
+                            Enter a short title describing
+                            the request.
                         </p>
                     </div>
                 </div>
@@ -597,8 +604,8 @@ export default function SupportTicketPage() {
                         <h2>Description</h2>
 
                         <p>
-                            Provide the details needed to understand the
-                            issue.
+                            Provide the details needed to
+                            understand the issue.
                         </p>
                     </div>
                 </div>
@@ -614,7 +621,9 @@ export default function SupportTicketPage() {
                         required
                     />
 
-                    <span className={styles.characterCount}>
+                    <span
+                        className={styles.characterCount}
+                    >
                         {form.description.length} characters
                     </span>
                 </label>
@@ -635,7 +644,8 @@ export default function SupportTicketPage() {
                         <h2>Priority</h2>
 
                         <p>
-                            Select the urgency level for this request.
+                            Select the urgency level for
+                            this request.
                         </p>
                     </div>
                 </div>
@@ -695,18 +705,29 @@ export default function SupportTicketPage() {
                     <h1>Submit a support ticket</h1>
 
                     <p className={styles.description}>
-                        Create a support request using the task
-                        information provided to you. The required ticket
-                        details will not be displayed in this application.
+                        Imagine that you have experienced an
+                        issue while using MarketLane and need
+                        assistance from customer support. On
+                        the next screen, create a new support
+                        request using the task information
+                        provided to you. Select the appropriate
+                        category, enter the provided subject,
+                        describe the issue, and choose the
+                        correct priority before submitting the
+                        request.
                     </p>
 
                     <div className={styles.notice}>
                         <Icon name="headset" />
 
                         <p>
-                            This is a simulated support portal. Do not enter
-                            real personal information. The timer starts when
-                            you select Begin Task.
+                            Keep the provided task information
+                            available while completing the task.
+                            This is a simulated support portal,
+                            so do not enter real personal
+                            information. After selecting Begin
+                            Task, proceed through the support
+                            request without going back.
                         </p>
                     </div>
 
@@ -830,7 +851,11 @@ export default function SupportTicketPage() {
                     <span>Help center</span>
                     <span>My tickets</span>
 
-                    <span className={styles.activeNavigationItem}>
+                    <span
+                        className={
+                            styles.activeNavigationItem
+                        }
+                    >
                         New request
                     </span>
 
@@ -846,8 +871,8 @@ export default function SupportTicketPage() {
                         <h1>Create a support request</h1>
 
                         <p>
-                            Complete the form below and submit the request
-                            to the support team.
+                            Complete the form below and submit
+                            the request to the support team.
                         </p>
                     </header>
 
@@ -855,7 +880,9 @@ export default function SupportTicketPage() {
                         className={styles.form}
                         onSubmit={handleSubmit}
                     >
-                        {formSectionOrder.map(renderFormSection)}
+                        {formSectionOrder.map(
+                            renderFormSection,
+                        )}
 
                         {error && (
                             <p
@@ -870,7 +897,9 @@ export default function SupportTicketPage() {
                             <button
                                 type="submit"
                                 className={styles.primaryButton}
-                                disabled={screen === "submitting"}
+                                disabled={
+                                    screen === "submitting"
+                                }
                             >
                                 {screen === "submitting"
                                     ? "Submitting ticket..."

@@ -112,12 +112,12 @@ function calculateAccuracy(form, scenario, isLOC) {
             normalizePostalCode(scenario.postalCode);
     }
 
-    return correctName &&
-    correctAddress &&
-    correctShipping &&
-    correctPayment
-        ? 1
-        : 0;
+    return (
+        Number(correctName) +
+        Number(correctAddress) +
+        Number(correctShipping) +
+        Number(correctPayment)
+    );
 }
 
 function CueSvg({ name }) {
@@ -593,9 +593,7 @@ export default function CheckoutPage() {
 
     async function handlePlaceOrder() {
         if (!trialId) {
-            setError(
-                "The trial was not started.",
-            );
+            setError("The trial was not started.");
             return;
         }
 
@@ -612,8 +610,7 @@ export default function CheckoutPage() {
             await completeTrial({
                 trialId,
                 accuracy,
-                completionDevice:
-                selectedDevice,
+                completionDevice: selectedDevice,
             });
 
             setScreen("complete");
@@ -643,9 +640,7 @@ export default function CheckoutPage() {
                 <h2 className={styles.sectionTitle}>
                     <SectionCue kind="customer" />
 
-                    <span>
-                        Customer information
-                    </span>
+                    <span>Customer information</span>
                 </h2>
 
                 <label>
@@ -870,7 +865,9 @@ export default function CheckoutPage() {
                                     ? "Not selected"
                                     : shippingCost === 0
                                         ? "Free"
-                                        : formatCurrency(shippingCost)}
+                                        : formatCurrency(
+                                            shippingCost,
+                                        )}
                             </strong>
                         </div>
 
@@ -909,17 +906,25 @@ export default function CheckoutPage() {
                     <h1>Checkout task</h1>
 
                     <p className={styles.description}>
-                        Complete the checkout using the
-                        task information provided to you.
-                        The required information will not
-                        be displayed in this application.
+                        Imagine that you are shopping on
+                        MarketLane and have added an item to
+                        your cart. You are now ready to
+                        complete your purchase. On the next
+                        screen, enter the customer name,
+                        shipping address, delivery method,
+                        and payment method using the task
+                        information provided to you. Review
+                        the information you entered before
+                        placing the order.
                     </p>
 
                     <p className={styles.notice}>
-                        Make sure the task information is
-                        available before continuing. The
-                        timer starts when you select Begin
-                        Task.
+                        Keep the provided task information
+                        available while completing the task.
+                        After selecting{" "}
+                        Begin Task, proceed
+                        through the checkout process without
+                        going back.
                     </p>
 
                     {error && (
@@ -1024,6 +1029,7 @@ export default function CheckoutPage() {
 
                                 <div className={styles.reviewRow}>
                                     <span>Full name</span>
+
                                     <strong>
                                         {form.fullName}
                                     </strong>
@@ -1035,6 +1041,7 @@ export default function CheckoutPage() {
 
                                 <div className={styles.reviewRow}>
                                     <span>Address</span>
+
                                     <strong>
                                         {enteredAddress}
                                     </strong>
@@ -1083,18 +1090,28 @@ export default function CheckoutPage() {
                             <div className={styles.reviewActions}>
                                 <button
                                     type="button"
-                                    className={styles.secondaryButton}
-                                    onClick={handleEditInformation}
-                                    disabled={screen === "submitting"}
+                                    className={
+                                        styles.secondaryButton
+                                    }
+                                    onClick={
+                                        handleEditInformation
+                                    }
+                                    disabled={
+                                        screen === "submitting"
+                                    }
                                 >
                                     Edit information
                                 </button>
 
                                 <button
                                     type="button"
-                                    className={styles.primaryButton}
+                                    className={
+                                        styles.primaryButton
+                                    }
                                     onClick={handlePlaceOrder}
-                                    disabled={screen === "submitting"}
+                                    disabled={
+                                        screen === "submitting"
+                                    }
                                 >
                                     <span>
                                         {screen === "submitting"

@@ -32,11 +32,11 @@ function calculateAccuracy(form, scenario) {
     const confirmationCorrect =
         form.confirmPassword === scenario.newPassword;
 
-    return currentPasswordCorrect &&
-    newPasswordCorrect &&
-    confirmationCorrect
-        ? 1
-        : 0;
+    return (
+        Number(currentPasswordCorrect) +
+        Number(newPasswordCorrect) +
+        Number(confirmationCorrect)
+    );
 }
 
 function getPasswordRequirements(password) {
@@ -657,18 +657,27 @@ export default function ChangePasswordPage() {
                     <h1>Change password task</h1>
 
                     <p className={styles.description}>
-                        Update the study account password using the
-                        information provided to you. The required
-                        passwords will not be displayed in this
-                        application.
+                        Imagine that you are checking the security
+                        settings for your MarketLane account and have
+                        decided to replace your existing password. On
+                        the next screen, enter the current password
+                        provided to you, enter the specified new
+                        password, and enter the new password again to
+                        confirm it. Review the password requirements
+                        displayed on the page before submitting the
+                        change.
                     </p>
 
                     <div className={styles.notice}>
                         <Icon name="lock" />
 
                         <p>
-                            Use only the fictional study passwords. The
-                            timer starts when you select Begin Task.
+                            Keep the provided task information
+                            available while completing the task. Use
+                            only the fictional passwords provided.
+                            After selecting Begin Task, proceed
+                            through the password update without going
+                            back.
                         </p>
                     </div>
 
