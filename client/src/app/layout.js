@@ -8,7 +8,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata = {
-  title: "MarketLane",
+  title: "Market Lane",
   description: "MarketLane online shopping",
 };
 
